@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+
+# Environment variables (secrets)
+.env.local
+.env*.local
+
+# TypeScript build cache
+tsconfig.tsbuildinfo
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,194 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@layer base {
+  :root {
+    /* Dark theme — FinLens brand palette */
+    --background: 240 15% 4%;
+    --foreground: 213 31% 91%;
+
+    --card: 240 12% 7%;
+    --card-foreground: 213 31% 91%;
+
+    --popover: 240 12% 7%;
+    --popover-foreground: 213 31% 91%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 8% 14%;
+    --secondary-foreground: 213 31% 91%;
+
+    --muted: 240 8% 14%;
+    --muted-foreground: 215 20% 55%;
+
+    --accent: 160 84% 39%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 8% 14%;
+    --input: 240 8% 14%;
+    --ring: 217 91% 60%;
+
+    --radius: 0.5rem;
+  }
+
+  * {
+    @apply border-border;
+    box-sizing: border-box;
+  }
+
+  html {
+    @apply bg-background text-foreground;
+    font-feature-settings: 'cv11', 'ss01';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-family: var(--font-inter, 'Inter', system-ui, sans-serif);
+    @apply bg-surface-0 text-foreground min-h-screen;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-surface-1;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-surface-4 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/40;
+  }
+
+  /* Selection */
+  ::selection {
+    background: hsl(var(--primary) / 0.3);
+    color: hsl(var(--foreground));
+  }
+}
+
+@layer components {
+  /* Rate value display */
+  .rate-value {
+    font-family: var(--font-jetbrains, 'JetBrains Mono', monospace);
+    @apply text-brand-green font-medium tabular-nums;
+  }
+
+  .rate-value-amber {
+    font-family: var(--font-jetbrains, 'JetBrains Mono', monospace);
+    @apply text-brand-amber font-medium tabular-nums;
+  }
+
+  /* Glass card effect */
+  .glass-card {
+    @apply bg-surface-1/80 backdrop-blur-sm border border-surface-3 rounded-xl;
+    background-image: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, transparent 60%);
+  }
+
+  /* Glow effect for top-ranked items */
+  .glow-green {
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.15), 0 0 40px rgba(16, 185, 129, 0.05);
+  }
+
+  .glow-blue {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.15), 0 0 40px rgba(59, 130, 246, 0.05);
+  }
+
+  /* Mono data cells */
+  .mono-data {
+    font-family: var(--font-jetbrains, 'JetBrains Mono', monospace);
+    @apply text-sm tabular-nums;
+  }
+
+  /* Live indicator dot */
+  .live-dot::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #10b981;
+    margin-right: 6px;
+    animation: pulse-slow 2s ease-in-out infinite;
+    box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+  }
+
+  /* Chat message prose */
+  .prose-dark {
+    @apply text-foreground/90 leading-relaxed;
+  }
+  .prose-dark h1, .prose-dark h2, .prose-dark h3 {
+    @apply text-foreground font-semibold mt-4 mb-2;
+  }
+  .prose-dark table {
+    @apply w-full text-sm border-collapse;
+  }
+  .prose-dark th {
+    @apply text-left text-xs uppercase tracking-wider text-muted-foreground border-b border-surface-3 pb-2 font-medium;
+  }
+  .prose-dark td {
+    @apply py-2 pr-4 border-b border-surface-3/50 font-mono text-sm;
+  }
+  .prose-dark strong {
+    @apply text-brand-green font-semibold;
+  }
+  .prose-dark ul {
+    @apply list-disc list-inside space-y-1 ml-2;
+  }
+  .prose-dark ol {
+    @apply list-decimal list-inside space-y-1 ml-2;
+  }
+  .prose-dark a {
+    @apply text-brand-blue underline underline-offset-2;
+  }
+  .prose-dark code {
+    @apply font-mono text-xs bg-surface-3 px-1.5 py-0.5 rounded text-brand-cyan;
+  }
+  .prose-dark blockquote {
+    @apply border-l-2 border-brand-blue pl-3 text-muted-foreground italic;
+  }
+  .prose-dark hr {
+    @apply border-surface-3 my-4;
+  }
+  .prose-dark p {
+    @apply mb-3 last:mb-0;
+  }
+}
+
+@layer utilities {
+  .text-gradient-blue {
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-green {
+    background: linear-gradient(135deg, #10b981, #06b6d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .border-gradient {
+    border-image: linear-gradient(135deg, #3b82f6, #8b5cf6) 1;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
