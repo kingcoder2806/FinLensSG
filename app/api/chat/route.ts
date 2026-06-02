@@ -8,6 +8,8 @@ import { SEED_RATES } from '@/constants/products';
 import { BANK_URLS, type BankUrlKey, type ProductUrlKey } from '@/constants/bankUrls';
 import { detectAgentType } from '@/lib/utils';
 import { cacheGet, cacheSet } from '@/lib/redis';
+import { getLatestFdRates, type RateHistoryRow } from '@/lib/supabase';
+import { buildKnowledgeBase } from '@/lib/knowledge-base';
 
 type IncomingMessage = {
   role: 'user' | 'assistant';
@@ -35,43 +37,110 @@ function seedAnswer(_prompt: string) {
   ].join('\n');
 }
 
+const PRODUCT_KEYWORDS: Array<[ProductUrlKey, string[]]> = [
+  ['savings',      ['savings', 'saving account', 'high-yield']],
+  ['fixedDeposit', ['fixed deposit', 'fd ', 'fd rate', 'fd interest', 'time deposit']],
+  ['funds',        ['fund', 'etf', 'unit trust']],
+  ['homeLoan',     ['home loan', 'mortgage', 'property loan']],
+  ['creditCard',   ['credit card', 'cashback card', 'miles card']],
+];
+
+const BANK_KEYWORDS: Array<[BankUrlKey, string[]]> = [
+  ['dbs',     ['dbs', 'posb']],
+  ['ocbc',    ['ocbc']],
+  ['uob',     ['uob']],
+  ['sc',      ['standard chartered', 'stanchart']],
+  ['citi',    ['citi', 'citibank']],
+  ['hsbc',    ['hsbc']],
+  ['maybank', ['maybank']],
+];
+
 function detectBankProduct(
   message: string,
 ): { bank: BankUrlKey; product: ProductUrlKey; url: string } | null {
   const lower = message.toLowerCase();
-
-  const bankMap: Array<[BankUrlKey, string[]]> = [
-    ['dbs', ['dbs', 'posb']],
-    ['ocbc', ['ocbc']],
-    ['uob', ['uob']],
-    ['sc', ['standard chartered', 'stanchart']],
-    ['citi', ['citi', 'citibank']],
-    ['hsbc', ['hsbc']],
-    ['maybank', ['maybank']],
-  ];
-
-  const productMap: Array<[ProductUrlKey, string[]]> = [
-    ['savings', ['savings', 'saving account', 'high-yield']],
-    ['fixedDeposit', ['fixed deposit', 'fd ', 'time deposit']],
-    ['funds', ['fund', 'etf', 'unit trust']],
-    ['homeLoan', ['home loan', 'mortgage', 'property loan']],
-    ['creditCard', ['credit card', 'cashback card', 'miles card']],
-  ];
-
   let bank: BankUrlKey | null = null;
   let product: ProductUrlKey | null = null;
-
-  for (const [b, keywords] of bankMap) {
-    if (keywords.some((kw) => lower.includes(kw))) { bank = b; break; }
-  }
-
-  for (const [p, keywords] of productMap) {
-    if (keywords.some((kw) => lower.includes(kw))) { product = p; break; }
-  }
-
+  for (const [b, kws] of BANK_KEYWORDS) { if (kws.some((kw) => lower.includes(kw))) { bank = b; break; } }
+  for (const [p, kws] of PRODUCT_KEYWORDS) { if (kws.some((kw) => lower.includes(kw))) { product = p; break; } }
   if (!bank || !product) return null;
-
   return { bank, product, url: BANK_URLS[bank][product] };
+}
+
+function detectProductOnly(message: string): ProductUrlKey | null {
+  const lower = message.toLowerCase();
+  for (const [p, kws] of PRODUCT_KEYWORDS) {
+    if (kws.some((kw) => lower.includes(kw))) return p;
+  }
+  return null;
+}
+
+function buildCompareUrlContext(product: ProductUrlKey): string {
+  const lines = (Object.keys(BANK_URLS) as BankUrlKey[])
+    .map((bank) => `- ${bank}: ${BANK_URLS[bank][product]}`)
+    .join('\n');
+  return `\n\nOptional verification URLs (use fetchUrl only if you want to check for very recent changes — proceed from the knowledge base if any URL fails):\n${lines}`;
+}
+
+// Maps BankUrlKey (chat detection) → bank_slug used in rate_history
+const BANK_URL_TO_SLUG: Record<BankUrlKey, string> = {
+  dbs: 'dbs',
+  ocbc: 'ocbc',
+  uob: 'uob',
+  sc: 'standard-chartered',
+  citi: 'citibank',
+  hsbc: 'hsbc',
+  maybank: 'maybank',
+};
+
+// Maps ProductUrlKey → product_category stored in rate_history
+const PRODUCT_TO_CATEGORY: Partial<Record<ProductUrlKey, string>> = {
+  fixedDeposit: 'fixed-deposit',
+  savings: 'savings',
+};
+
+function filterDbRows(
+  rows: RateHistoryRow[],
+  bankProduct: { bank: BankUrlKey; product: ProductUrlKey } | null,
+  detectedProduct: ProductUrlKey | null,
+): RateHistoryRow[] {
+  if (!detectedProduct) return [];
+  const category = PRODUCT_TO_CATEGORY[detectedProduct];
+  if (!category) return [];
+  return rows.filter((r) => {
+    if (r.product_category !== category) return false;
+    if (bankProduct) return r.bank_slug === BANK_URL_TO_SLUG[bankProduct.bank];
+    return true;
+  });
+}
+
+function buildDbContext(rows: RateHistoryRow[]): string {
+  if (rows.length === 0) return '';
+
+  const recordedAt = [...rows]
+    .sort((a, b) => b.recorded_at.localeCompare(a.recorded_at))[0]
+    .recorded_at.slice(0, 10);
+
+  const lines = [...rows]
+    .sort((a, b) => {
+      if (a.bank_slug !== b.bank_slug) return a.bank_slug.localeCompare(b.bank_slug);
+      return (a.tenor_months ?? 0) - (b.tenor_months ?? 0);
+    })
+    .map((r) => {
+      const promo = r.promo_rate != null ? `${r.promo_rate.toFixed(2)}%` : '—';
+      const minPromo = r.min_deposit_promo != null
+        ? `S$${r.min_deposit_promo.toLocaleString()}`
+        : '—';
+      return `| ${r.bank_slug} | ${r.tenor_months}M | ${r.rate.toFixed(2)}% | ${promo} | ${minPromo} |`;
+    });
+
+  return [
+    `\n\nVerified rates from database (recorded ${recordedAt}):`,
+    '| Bank | Tenor | Board rate | Promo rate | Min deposit (promo) |',
+    '|------|-------|------------|------------|---------------------|',
+    ...lines,
+    '\nUse these as your primary source. Only call fetchUrl if you need to verify whether a specific rate has changed since the recorded date.',
+  ].join('\n');
 }
 
 export async function POST(req: Request) {
@@ -89,6 +158,8 @@ export async function POST(req: Request) {
   }
 
   const bankProduct = detectBankProduct(last);
+  const detectedProduct = bankProduct?.product ?? detectProductOnly(last);
+
   console.log('[FinLens] detected bank/product:', bankProduct
     ? `${bankProduct.bank} / ${bankProduct.product} → ${bankProduct.url}`
     : 'none (generic query)');
@@ -104,17 +175,36 @@ export async function POST(req: Request) {
     console.log('[FinLens] cache miss for key:', cacheKey);
   }
 
+  // Query Supabase for verified rates — used as primary context for Claude
+  const allDbRates = await getLatestFdRates();
+  const relevantDbRows = filterDbRows(allDbRates, bankProduct, detectedProduct);
+  const dbContext = buildDbContext(relevantDbRows);
+  console.log('[FinLens] db rows for context:', relevantDbRows.length);
+
   const model = process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6';
   console.log('[FinLens] calling Claude model:', model);
 
-  const urlContext = bankProduct
-    ? `\n\nOfficial source URL: ${bankProduct.url}\nFetch this URL first before using web search.`
-    : '';
+  let urlContext = '';
+  const maxSteps = 3; // KB is the primary source; fetchUrl is optional verification only
+
+  if (bankProduct) {
+    urlContext = `\n\nOptional verification URL (only call fetchUrl if you want to check for very recent changes — proceed from the knowledge base if it fails): ${bankProduct.url}`;
+  } else if (agentType === 'compare') {
+    const product = detectedProduct;
+    if (product) {
+      urlContext = buildCompareUrlContext(product);
+      console.log('[FinLens] compare mode: product =', product, '| db rows =', relevantDbRows.length);
+    }
+  }
+
+  const knowledgeBase = buildKnowledgeBase();
+  const baseSystem = agentType === 'compare' ? COMPARE_AGENT_SYSTEM : RATES_AGENT_SYSTEM;
+  const systemWithKb = `${baseSystem}\n\n${knowledgeBase}`;
 
   try {
     const result = await generateText({
       model: anthropic(model),
-      maxSteps: 5,
+      maxSteps,
       tools: {
         fetchUrl: tool({
           description:
@@ -152,8 +242,8 @@ export async function POST(req: Request) {
           },
         }),
       },
-      system: agentType === 'compare' ? COMPARE_AGENT_SYSTEM : RATES_AGENT_SYSTEM,
-      prompt: `${messages.map((m) => `${m.role}: ${m.content}`).join('\n')}${urlContext}\nassistant:`,
+      system: systemWithKb,
+      prompt: `${messages.map((m) => `${m.role}: ${m.content}`).join('\n')}${dbContext}${urlContext}\nassistant:`,
     });
 
     console.log('[FinLens] source: CLAUDE LIVE (steps used:', result.steps.length, ')');

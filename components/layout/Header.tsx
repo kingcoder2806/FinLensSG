@@ -2,12 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3, BrainCircuit, Building2, Bell, TrendingUp } from 'lucide-react';
+import { BarChart3, BrainCircuit, Building2, Bell, TrendingUp, PiggyBank, LineChart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
   { href: '/', label: 'AI Chat', icon: BrainCircuit },
-  { href: '/compare', label: 'Compare', icon: BarChart3 },
+  { href: '/compare', label: 'Fixed Deposits', icon: BarChart3 },
+  { href: '/savings', label: 'Savings', icon: PiggyBank },
+  { href: '/etfs-bonds', label: 'ETFs & Bonds', icon: LineChart },
   { href: '/banks/dbs', label: 'Banks', icon: Building2 },
   { href: '/alerts', label: 'Alerts', icon: Bell },
 ];
@@ -35,7 +37,7 @@ export function Header() {
             const isActive =
               href === '/'
                 ? pathname === '/'
-                : pathname === href || pathname.startsWith(href.replace('/dbs', ''));
+                : pathname === href || pathname.startsWith(href === '/banks/dbs' ? '/banks' : href + '/');
             return (
               <Link
                 key={href}
@@ -67,7 +69,7 @@ export function Header() {
             const isActive =
               href === '/'
                 ? pathname === '/'
-                : pathname === href || pathname.startsWith(href.replace('/dbs', ''));
+                : pathname === href || pathname.startsWith(href === '/banks/dbs' ? '/banks' : href + '/');
             return (
               <Link
                 key={href}

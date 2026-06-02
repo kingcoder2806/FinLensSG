@@ -67,7 +67,7 @@ export function ChatPanel() {
   }
 
   return (
-    <section className="flex min-h-[calc(100vh-3.5rem)]">
+    <section className="flex flex-1 min-w-0 min-h-[calc(100vh-3.5rem)]">
       <div className="mx-auto flex w-full max-w-4xl flex-col px-4 py-6 md:px-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>

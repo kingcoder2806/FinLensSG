@@ -17,3 +17,13 @@ tsconfig.tsbuildinfo
 Thumbs.db
 .vscode/
 .idea/
+.claude/
+
+# Design prototypes (not production code)
+Design/
+"FinLens SG.html"
+FinLens\ SG.html
+
+# Raw research data (compiled into knowledge-base.ts)
+sg_fixed_deposit_rates_mid2026.md
+deep-research-report-*.md

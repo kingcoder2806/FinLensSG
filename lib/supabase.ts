@@ -21,6 +21,9 @@ export interface RateHistoryRow {
   rate: number;
   promo_rate: number | null;
   tenor_months: number | null;
+  source_url: string | null;
+  min_deposit_board: number | null;
+  min_deposit_promo: number | null;
   recorded_at: string;
 }
 
@@ -53,4 +56,25 @@ export async function getActiveAlerts(): Promise<AlertRow[]> {
     .eq('active', true);
   if (error) return [];
   return (data as AlertRow[]) ?? [];
+}
+
+export async function getLatestFdRates(): Promise<RateHistoryRow[]> {
+  const { data, error } = await supabaseAdmin
+    .from('rate_history')
+    .select('*')
+    .eq('product_category', 'fixed-deposit')
+    .order('recorded_at', { ascending: false });
+  if (error) return [];
+
+  // Keep only the most recent row per bank + tenor
+  const seen = new Set<string>();
+  const latest: RateHistoryRow[] = [];
+  for (const row of (data as RateHistoryRow[]) ?? []) {
+    const key = `${row.bank_slug}:${row.tenor_months}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      latest.push(row);
+    }
+  }
+  return latest;
 }

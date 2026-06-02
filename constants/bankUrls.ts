@@ -1,14 +1,14 @@
 export const BANK_URLS = {
   dbs: {
     savings: "https://www.dbs.com.sg/personal/deposits/savings-accounts/multiplier",
-    fixedDeposit: "https://www.dbs.com.sg/personal/deposits/fixed-deposits/sgd-fixed-deposit",
+    fixedDeposit: "https://www.dbs.com.sg/personal/rates/deposit-rates/fixed-deposits.page",
     funds: "https://www.dbs.com.sg/personal/investments/funds-and-etfs",
     homeLoan: "https://www.dbs.com.sg/personal/loans/home-loans/home-loan-rates",
     creditCard: "https://www.dbs.com.sg/personal/cards/credit-cards",
   },
   ocbc: {
     savings: "https://www.ocbc.com/personal-banking/deposits/360-account",
-    fixedDeposit: "https://www.ocbc.com/personal-banking/deposits/fixed-deposit",
+    fixedDeposit: "https://www.ocbc.com/personal-banking/deposits/fixed-deposit-account.page",
     funds: "https://www.ocbc.com/personal-banking/investments/unit-trusts",
     homeLoan: "https://www.ocbc.com/personal-banking/loans/home-loans",
     creditCard: "https://www.ocbc.com/personal-banking/cards/credit-cards",
@@ -22,14 +22,14 @@ export const BANK_URLS = {
   },
   sc: {
     savings: "https://www.sc.com/sg/save/accounts/bonussaver/",
-    fixedDeposit: "https://www.sc.com/sg/save/deposits/sgd-time-deposit/",
+    fixedDeposit: "https://www.sc.com/sg/save/time-deposits/sgd-time-deposit/",
     funds: "https://www.sc.com/sg/invest/funds/",
     homeLoan: "https://www.sc.com/sg/borrow/mortgages/",
     creditCard: "https://www.sc.com/sg/credit-cards/",
   },
   citi: {
     savings: "https://www.citibank.com.sg/en/personal-banking/deposits/",
-    fixedDeposit: "https://www.citibank.com.sg/en/personal-banking/deposits/fixed-deposits/",
+    fixedDeposit: "https://www.citibank.com.sg/personal-banking/deposits/fixed-deposit/",
     funds: "https://www.citibank.com.sg/en/personal-banking/investments/",
     homeLoan: "https://www.citibank.com.sg/en/personal-banking/loans/home-loans/",
     creditCard: "https://www.citibank.com.sg/en/personal-banking/credit-cards/",
@@ -43,7 +43,7 @@ export const BANK_URLS = {
   },
   maybank: {
     savings: "https://www.maybank2u.com.sg/en/personal/deposits/saveup-programme.page",
-    fixedDeposit: "https://www.maybank2u.com.sg/en/personal/deposits/fixed-deposit.page",
+    fixedDeposit: "https://www.maybank2u.com.sg/en/personal/deposit/time-deposit.page",
     funds: "https://www.maybank2u.com.sg/en/personal/investments/unit-trusts.page",
     homeLoan: "https://www.maybank2u.com.sg/en/personal/loans/home-loans.page",
     creditCard: "https://www.maybank2u.com.sg/en/personal/cards/credit-cards.page",
