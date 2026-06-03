@@ -48,26 +48,28 @@ const config: Config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
-        /* Brand tokens */
+        /* Brand tokens — warm palette */
         brand: {
-          blue: '#3b82f6',
-          purple: '#8b5cf6',
-          green: '#10b981',
-          amber: '#f59e0b',
-          red: '#ef4444',
-          cyan: '#06b6d4',
+          blue: '#6d9fc0',
+          purple: '#8b7355',
+          green: '#66b896',
+          amber: '#c99b44',
+          gold: '#c99b44',
+          red: '#c07048',
+          cyan: '#6d9fc0',
         },
         surface: {
-          0: '#09090f',
-          1: '#0f0f1a',
-          2: '#14141f',
-          3: '#1a1a28',
-          4: '#22222f',
+          0: '#1a1813',
+          1: '#201e18',
+          2: '#26231c',
+          3: '#3c3830',
+          4: '#2e2a22',
         },
       },
       fontFamily: {
         sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
-        mono: ['var(--font-jetbrains)', 'JetBrains Mono', 'Fira Code', 'monospace'],
+        serif: ['var(--font-newsreader)', 'Georgia', 'serif'],
+        mono: ['var(--font-ibm-mono)', 'ui-monospace', 'monospace'],
       },
       borderRadius: {
         lg: 'var(--radius)',
@@ -95,6 +97,18 @@ const config: Config = {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
         },
+        'rise': {
+          from: { opacity: '0', transform: 'translateY(14px)' },
+          to: { opacity: '1', transform: 'none' },
+        },
+        'blink': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.25' },
+        },
+        'ticker': {
+          from: { transform: 'translateX(0)' },
+          to: { transform: 'translateX(-50%)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
@@ -102,6 +116,9 @@ const config: Config = {
         'fade-in': 'fade-in 0.3s ease-out',
         'pulse-slow': 'pulse-slow 2s ease-in-out infinite',
         'shimmer': 'shimmer 2s linear infinite',
+        'rise': 'rise 0.6s cubic-bezier(.2,.7,.3,1) both',
+        'blink': 'blink 1s infinite',
+        'ticker': 'ticker 28s linear infinite',
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',

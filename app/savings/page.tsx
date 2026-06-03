@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { BankFilter } from '@/components/banks/BankFilter';
-import { Sidebar } from '@/components/layout/Sidebar';
 import { SAVINGS_ACCOUNTS } from '@/constants/products';
 import { BANK_MAP } from '@/constants/banks';
 import { cn } from '@/lib/utils';
@@ -19,15 +18,15 @@ export default function SavingsPage() {
   const maxRate = Math.max(...visible.map((a) => a.maxRate));
 
   return (
-    <div className="flex">
-      <Sidebar />
-      <main className="mx-auto w-full max-w-6xl px-4 py-6 md:px-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold tracking-tight">Compare Savings Account Rates</h1>
-          <p className="text-sm text-muted-foreground">
-            Main bonus savings products across Singapore&apos;s seven major banks. Ask Fin in the chat for live rates and personalised picks.
-          </p>
-        </div>
+    <div className="wrap" style={{ paddingTop: 40, paddingBottom: 60 }}>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--ink)', marginBottom: 6 }}>
+          Compare Savings Account Rates
+        </h1>
+        <p style={{ fontSize: 14, color: 'var(--ink-3)' }}>
+          Main bonus savings products across Singapore&apos;s seven major banks. Ask Fin in the chat for live rates and personalised picks.
+        </p>
+      </div>
 
         <BankFilter selected={selectedBanks} onChange={setSelectedBanks} className="mb-4" />
 
@@ -127,7 +126,6 @@ export default function SavingsPage() {
         <p className="text-xs text-muted-foreground mt-3 px-1">
           Reference data as of Jun 2026. Most banks use layered bonus structures — max rates require meeting multiple conditions simultaneously. Verify current terms directly with each bank.
         </p>
-      </main>
     </div>
   );
 }

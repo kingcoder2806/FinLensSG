@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Historical rate snapshots (populated by future scraper/cron) ──────────────
+
+model RateHistory {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bankSlug        String   @map("bank_slug")
+  productCategory String   @map("product_category")
+  productName     String   @map("product_name")
+  rate            Decimal  @db.Decimal(6, 4)
+  promoRate       Decimal? @map("promo_rate") @db.Decimal(6, 4)
+  tenorMonths     Int?     @map("tenor_months")
+  recordedAt      DateTime @default(now()) @map("recorded_at") @db.Timestamptz()
+
+  @@index([bankSlug, productCategory, recordedAt(sort: Desc)])
+  @@map("rate_history")
+}
+
+// ── User rate-alert subscriptions ────────────────────────────────────────────
+
+model Alert {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email           String
+  bankSlug        String?  @map("bank_slug")
+  productCategory String?  @map("product_category")
+  targetRate      Decimal? @map("target_rate") @db.Decimal(6, 4)
+  direction       String?  // 'above' | 'below'
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@index([email])
+  @@index([active])
+  @@map("alerts")
+}
+
+// ── Home loan seed data (Jun 2026 snapshot) ───────────────────────────────────
+
+model HomeLoan {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bankSlug      String   @map("bank_slug")
+  packageName   String   @map("package_name")
+  type          String   // 'SORA' | 'Fixed'
+  rate          Decimal  @db.Decimal(5, 2)
+  lockin        String
+  ref           String
+  minLoan       String   @map("min_loan")
+  notes         String   @default("")
+  effectiveDate DateTime @map("effective_date") @db.Date
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@index([bankSlug])
+  @@map("home_loans")
+}
+
+// ── Credit card seed data (Jun 2026 snapshot) ────────────────────────────────
+
+model CreditCard {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bankSlug      String   @map("bank_slug")
+  name          String
+  type          String   // 'Cashback' | 'Miles'
+  headline      String
+  detail        String
+  annualFee     String   @map("annual_fee")
+  minIncome     String   @default("—") @map("min_income")
+  effectiveDate DateTime @map("effective_date") @db.Date
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@index([bankSlug])
+  @@index([type])
+  @@map("credit_cards")
+}
+
+// ── ETF seed data (Jun 2026 snapshot) ────────────────────────────────────────
+
+model EtfProduct {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ticker        String   @unique
+  name          String
+  type          String   // 'bond-etf' | 'equity-etf'
+  nav           Decimal? @db.Decimal(10, 4)
+  ytd           Decimal? @db.Decimal(6, 2)
+  oneYear       Decimal? @map("one_year") @db.Decimal(6, 2)
+  expenseRatio  Decimal? @map("expense_ratio") @db.Decimal(5, 3)
+  aumSgdM       Decimal? @map("aum_sgd_m") @db.Decimal(10, 2)
+  dividendYield Decimal? @map("dividend_yield") @db.Decimal(5, 2)
+  description   String   @default("")
+  asOf          String   @map("as_of")
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@map("etf_products")
+}

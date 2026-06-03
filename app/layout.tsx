@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, JetBrains_Mono } from 'next/font/google';
+import { Inter, Newsreader, IBM_Plex_Mono } from 'next/font/google';
 import './globals.css';
 import { Header } from '@/components/layout/Header';
 
@@ -9,10 +9,18 @@ const inter = Inter({
   display: 'swap',
 });
 
-const jetbrainsMono = JetBrains_Mono({
+const newsreader = Newsreader({
   subsets: ['latin'],
-  variable: '--font-jetbrains',
+  variable: '--font-newsreader',
   display: 'swap',
+  style: ['normal', 'italic'],
+});
+
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ['latin'],
+  variable: '--font-ibm-mono',
+  display: 'swap',
+  weight: ['400', '500', '600'],
 });
 
 export const metadata: Metadata = {
@@ -47,13 +55,13 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#09090f',
+  themeColor: '#1a1813',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-SG" className={`${inter.variable} ${jetbrainsMono.variable} dark`}>
-      <body className="bg-surface-0 text-foreground min-h-screen flex flex-col antialiased">
+    <html lang="en-SG" className={`${inter.variable} ${newsreader.variable} ${ibmPlexMono.variable} dark`}>
+      <body className="min-h-screen flex flex-col antialiased">
         <Header />
         <main className="flex-1">{children}</main>
       </body>

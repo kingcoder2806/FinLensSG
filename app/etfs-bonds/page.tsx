@@ -1,6 +1,5 @@
 'use client';
 
-import { Sidebar } from '@/components/layout/Sidebar';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { ETF_PRODUCTS, SGS_BONDS, CORPORATE_BONDS, BANK_INVESTMENTS } from '@/constants/products';
@@ -17,19 +16,19 @@ function sgd(n: number | null) {
 }
 
 export default function EtfsBondsPage() {
-  const maxEtfYtd = Math.max(...ETF_PRODUCTS.map((e) => e.ytd));
+  const maxEtfYtd = Math.max(...ETF_PRODUCTS.map((e) => e.ytd ?? -Infinity));
   const maxCorpYtm = Math.max(...CORPORATE_BONDS.map((b) => b.ytm));
 
   return (
-    <div className="flex">
-      <Sidebar />
-      <main className="mx-auto w-full max-w-6xl px-4 py-6 md:px-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold tracking-tight">ETFs, Bonds &amp; Bank Investments</h1>
-          <p className="text-sm text-muted-foreground">
-            Singapore-listed ETFs, SGS benchmark bonds, SGX retail corporate bonds, and bank-offered investment products. Reference data as of 2 Jun 2026.
-          </p>
-        </div>
+    <div className="wrap" style={{ paddingTop: 40, paddingBottom: 60 }}>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--ink)', marginBottom: 6 }}>
+          ETFs, Bonds &amp; Bank Investments
+        </h1>
+        <p style={{ fontSize: 14, color: 'var(--ink-3)' }}>
+          Singapore-listed ETFs, SGS benchmark bonds, SGX retail corporate bonds, and bank-offered investment products. Reference data as of 2 Jun 2026.
+        </p>
+      </div>
 
         <Tabs defaultValue="etfs">
           <TabsList className="mb-4">
@@ -80,7 +79,7 @@ export default function EtfsBondsPage() {
                           </Badge>
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <span className="font-mono text-sm text-muted-foreground">S${etf.nav.toFixed(4)}</span>
+                          <span className="font-mono text-sm text-muted-foreground">{etf.nav != null ? `S$${etf.nav.toFixed(4)}` : '—'}</span>
                         </td>
                         <td className="px-4 py-3 text-right">
                           <span className={cn('font-mono text-sm font-bold', isBest ? 'text-brand-green' : 'text-brand-amber')}>
@@ -317,7 +316,6 @@ export default function EtfsBondsPage() {
             </p>
           </TabsContent>
         </Tabs>
-      </main>
     </div>
   );
 }

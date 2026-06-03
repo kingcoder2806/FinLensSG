@@ -3,7 +3,6 @@ import { Phone, Mail, ExternalLink } from 'lucide-react';
 import { BANKS, BANK_MAP, type BankSlug } from '@/constants/banks';
 import { SEED_RATES } from '@/constants/products';
 import { RateTable } from '@/components/rates/RateTable';
-import { Sidebar } from '@/components/layout/Sidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export function generateStaticParams() {
@@ -23,9 +22,8 @@ export default function BankPage({ params }: { params: { slug: BankSlug } }) {
   };
 
   return (
-    <div className="flex">
-      <Sidebar />
-      <main className="mx-auto w-full max-w-5xl px-4 py-6 md:px-6">
+    <div className="wrap" style={{ paddingTop: 40, paddingBottom: 60 }}>
+      <main className="mx-auto w-full max-w-5xl">
         <div className="mb-6 flex items-start gap-3">
           <span className="text-4xl">{bank.logo}</span>
           <div>

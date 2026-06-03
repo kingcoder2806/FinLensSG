@@ -119,12 +119,12 @@ export function buildKnowledgeBase(): string {
       e.ticker,
       e.name,
       e.type === 'bond-etf' ? 'Bond ETF' : 'Equity ETF',
-      `S$${e.nav.toFixed(4)}`,
-      `${e.ytd.toFixed(2)}%`,
+      e.nav != null ? `S$${e.nav.toFixed(4)}` : '—',
+      e.ytd != null ? `${e.ytd.toFixed(2)}%` : '—',
       e.oneYear != null ? `${e.oneYear.toFixed(2)}%` : '—',
       e.dividendYield != null ? `${e.dividendYield.toFixed(2)}%` : '—',
       e.expenseRatio != null ? `${e.expenseRatio.toFixed(2)}%` : '—',
-      `S$${(e.aumSgdM / 1000).toFixed(2)}bn`,
+      e.aumSgdM != null ? `S$${(e.aumSgdM / 1000).toFixed(2)}bn` : '—',
     ));
   }
   sections.push(

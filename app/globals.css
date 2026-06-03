@@ -2,112 +2,352 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+/* ============================================================
+   FinLens SG — Design Tokens & Base
+   Warm near-black dark theme
+   ============================================================ */
+
+:root {
+  /* --- Surfaces: warm near-black, layered --- */
+  --bg:         oklch(0.165 0.006 70);
+  --bg-2:       oklch(0.195 0.006 70);
+  --surface:    oklch(0.225 0.007 72);
+  --surface-2:  oklch(0.262 0.008 74);
+  --line:       oklch(0.34 0.009 75);
+  --line-soft:  oklch(0.30 0.008 75);
+
+  /* --- Ink: warm ivory --- */
+  --ink:        oklch(0.95 0.008 80);
+  --ink-2:      oklch(0.80 0.010 78);
+  --ink-3:      oklch(0.64 0.010 76);
+  --ink-4:      oklch(0.50 0.009 74);
+
+  /* --- Accent: champagne gold --- */
+  --gold:       oklch(0.81 0.085 82);
+  --gold-soft:  oklch(0.81 0.085 82 / 0.14);
+  --gold-line:  oklch(0.81 0.085 82 / 0.32);
+  --gold-deep:  oklch(0.70 0.085 80);
+
+  /* --- Semantic: rate up / down --- */
+  --up:         oklch(0.78 0.095 158);
+  --up-soft:    oklch(0.78 0.095 158 / 0.14);
+  --down:       oklch(0.72 0.105 35);
+  --down-soft:  oklch(0.72 0.105 35 / 0.14);
+  --info:       oklch(0.76 0.075 235);
+
+  /* --- Type --- */
+  --font-serif: var(--font-newsreader), Georgia, serif;
+  --font-body:  var(--font-inter), system-ui, sans-serif;
+  --font-mono:  var(--font-ibm-mono), ui-monospace, monospace;
+
+  /* --- Radius / shadow --- */
+  --r-sm:    8px;
+  --r:       13px;
+  --r-lg:    20px;
+  --r-xl:    28px;
+  --shadow:  0 1px 2px rgba(0,0,0,.4), 0 12px 32px -12px rgba(0,0,0,.55);
+  --shadow-lg: 0 2px 6px rgba(0,0,0,.45), 0 30px 70px -28px rgba(0,0,0,.7);
+
+  --maxw: 1240px;
+
+  /* --- shadcn CSS vars mapped to warm palette --- */
+  --background: 30 8% 10%;
+  --foreground: 35 10% 93%;
+
+  --card: 32 8% 13%;
+  --card-foreground: 35 10% 93%;
+
+  --popover: 32 8% 13%;
+  --popover-foreground: 35 10% 93%;
+
+  --primary: 40 55% 54%;
+  --primary-foreground: 30 8% 10%;
+
+  --secondary: 32 8% 15%;
+  --secondary-foreground: 35 10% 93%;
+
+  --muted: 32 8% 15%;
+  --muted-foreground: 30 8% 55%;
+
+  --accent: 158 32% 57%;
+  --accent-foreground: 30 8% 10%;
+
+  --destructive: 25 50% 52%;
+  --destructive-foreground: 35 10% 93%;
+
+  --border: 32 8% 22%;
+  --input: 32 8% 15%;
+  --ring: 40 55% 54%;
+
+  --radius: 0.5rem;
+}
+
+/* ============================================================
+   Base reset & body
+   ============================================================ */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
 @layer base {
-  :root {
-    /* Dark theme — FinLens brand palette */
-    --background: 240 15% 4%;
-    --foreground: 213 31% 91%;
-
-    --card: 240 12% 7%;
-    --card-foreground: 213 31% 91%;
-
-    --popover: 240 12% 7%;
-    --popover-foreground: 213 31% 91%;
-
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 240 8% 14%;
-    --secondary-foreground: 213 31% 91%;
-
-    --muted: 240 8% 14%;
-    --muted-foreground: 215 20% 55%;
-
-    --accent: 160 84% 39%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 240 8% 14%;
-    --input: 240 8% 14%;
-    --ring: 217 91% 60%;
-
-    --radius: 0.5rem;
-  }
-
   * {
     @apply border-border;
-    box-sizing: border-box;
   }
 
   html {
-    @apply bg-background text-foreground;
-    font-feature-settings: 'cv11', 'ss01';
+    scroll-behavior: smooth;
+    font-feature-settings: 'ss01';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-  }
-
-  body {
-    font-family: var(--font-inter, 'Inter', system-ui, sans-serif);
-    @apply bg-surface-0 text-foreground min-h-screen;
-  }
-
-  /* Scrollbar styling */
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  ::-webkit-scrollbar-track {
-    @apply bg-surface-1;
-  }
-  ::-webkit-scrollbar-thumb {
-    @apply bg-surface-4 rounded-full;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted-foreground/40;
-  }
-
-  /* Selection */
-  ::selection {
-    background: hsl(var(--primary) / 0.3);
-    color: hsl(var(--foreground));
+    text-rendering: optimizeLegibility;
   }
 }
 
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* subtle atmospheric overlay */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(120% 80% at 80% -10%, oklch(0.81 0.085 82 / 0.06), transparent 55%),
+    radial-gradient(90% 60% at 0% 0%, oklch(0.76 0.075 235 / 0.045), transparent 50%);
+}
+
+/* scrollbar */
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-thumb { background: var(--surface-2); border-radius: 20px; border: 3px solid var(--bg); }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* selection */
+::selection { background: var(--gold-soft); color: var(--ink); }
+
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+input, textarea, select { font-family: inherit; }
+
+h1, h2, h3, h4 { font-weight: 600; line-height: 1.08; letter-spacing: -0.01em; }
+
+/* focus ring */
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 4px; }
+
+/* ============================================================
+   Layout helpers
+   ============================================================ */
+.wrap { width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 28px; }
+.row { display: flex; align-items: center; }
+.col { display: flex; flex-direction: column; }
+.spread { display: flex; align-items: center; justify-content: space-between; }
+.wgrow { flex: 1; }
+
+/* ============================================================
+   Reusable atoms
+   ============================================================ */
+.eyebrow {
+  font-size: 11.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 600;
+}
+.eyebrow-gold { color: var(--gold); }
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+  background: var(--surface);
+  transition: border-color .15s, color .15s;
+}
+.pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
+.pill:hover { border-color: var(--gold-line); color: var(--gold); }
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.tag-gold { background: var(--gold-soft); color: var(--gold); border: 1px solid var(--gold-line); }
+.tag-up   { background: var(--up-soft); color: var(--up); }
+.tag-down { background: var(--down-soft); color: var(--down); }
+.tag-flat { background: var(--surface-2); color: var(--ink-3); }
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 0 20px;
+  height: 46px;
+  border-radius: 11px;
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  transition: transform .14s ease, background .18s ease, border-color .18s ease, box-shadow .18s ease;
+  white-space: nowrap;
+}
+.btn:active { transform: translateY(1px); }
+
+.btn-gold {
+  background: linear-gradient(180deg, var(--gold), var(--gold-deep));
+  color: oklch(0.20 0.02 75);
+  box-shadow: 0 8px 24px -10px var(--gold-line);
+}
+.btn-gold:hover {
+  box-shadow: 0 12px 30px -10px var(--gold-line);
+  transform: translateY(-1px);
+}
+
+.btn-ghost {
+  border: 1px solid var(--line);
+  color: var(--ink);
+  background: var(--surface);
+}
+.btn-ghost:hover { background: var(--surface-2); border-color: var(--line); }
+
+.btn-sm  { height: 38px; padding: 0 15px; font-size: 13px; border-radius: 9px; }
+.btn-lg  { height: 54px; padding: 0 26px; font-size: 15.5px; }
+
+/* Card — design system card */
+.card-finlens {
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow);
+}
+
+/* divider */
+.divider { height: 1px; background: var(--line-soft); width: 100%; }
+
+/* bank mark */
+.bank-mark {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--ink);
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+  letter-spacing: -0.02em;
+}
+
+/* ticker */
+.ticker-wrap {
+  overflow: hidden;
+  white-space: nowrap;
+}
+.ticker-track {
+  display: inline-flex;
+  animation: ticker 28s linear infinite;
+}
+
+/* ============================================================
+   Animations / utilities
+   ============================================================ */
+@keyframes rise   { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes fade   { from { opacity: 0; } to { opacity: 1; } }
+@keyframes blink  { 0%,100%{ opacity:1 } 50%{ opacity:0.25 } }
+@keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+.rise { animation: rise .6s cubic-bezier(.2,.7,.3,1) both; }
+
+/* ============================================================
+   Responsive grid helpers
+   ============================================================ */
+@media (max-width: 1000px) {
+  .hero-grid  { grid-template-columns: 1fr !important; }
+  .fin-band   { grid-template-columns: 1fr !important; }
+  .cat-grid   { grid-template-columns: repeat(2, 1fr) !important; }
+  .foot-grid  { grid-template-columns: 1fr 1fr !important; }
+  .compare-panel-grid { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 760px) {
+  .wrap { padding: 0 18px; }
+  .nav-desktop { display: none !important; }
+  .cat-grid { grid-template-columns: 1fr !important; }
+  .foot-grid { grid-template-columns: 1fr !important; }
+  .nav-mobile-btn { display: block !important; }
+}
+
+@media (min-width: 761px) {
+  .nav-mobile-btn { display: none !important; }
+  .nav-mobile-menu { display: none !important; }
+}
+
+/* ============================================================
+   Component styles (kept from original, updated to warm palette)
+   ============================================================ */
 @layer components {
   /* Rate value display */
   .rate-value {
-    font-family: var(--font-jetbrains, 'JetBrains Mono', monospace);
-    @apply text-brand-green font-medium tabular-nums;
+    font-family: var(--font-ibm-mono, var(--font-mono), monospace);
+    color: var(--up);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
   }
 
   .rate-value-amber {
-    font-family: var(--font-jetbrains, 'JetBrains Mono', monospace);
-    @apply text-brand-amber font-medium tabular-nums;
+    font-family: var(--font-ibm-mono, var(--font-mono), monospace);
+    color: var(--gold);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
   }
 
   /* Glass card effect */
   .glass-card {
-    @apply bg-surface-1/80 backdrop-blur-sm border border-surface-3 rounded-xl;
+    background: color-mix(in oklab, var(--surface) 80%, transparent);
+    backdrop-filter: blur(4px);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--r-lg);
     background-image: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, transparent 60%);
   }
 
-  /* Glow effect for top-ranked items */
+  /* Glow effects */
   .glow-green {
-    box-shadow: 0 0 20px rgba(16, 185, 129, 0.15), 0 0 40px rgba(16, 185, 129, 0.05);
+    box-shadow: 0 0 20px rgba(102, 184, 150, 0.15), 0 0 40px rgba(102, 184, 150, 0.05);
   }
-
   .glow-blue {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.15), 0 0 40px rgba(59, 130, 246, 0.05);
+    box-shadow: 0 0 20px rgba(109, 159, 192, 0.15), 0 0 40px rgba(109, 159, 192, 0.05);
   }
 
   /* Mono data cells */
   .mono-data {
-    font-family: var(--font-jetbrains, 'JetBrains Mono', monospace);
-    @apply text-sm tabular-nums;
+    font-family: var(--font-ibm-mono, var(--font-mono), monospace);
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
   }
 
   /* Live indicator dot */
@@ -117,76 +357,107 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #10b981;
+    background: var(--up);
     margin-right: 6px;
-    animation: pulse-slow 2s ease-in-out infinite;
-    box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+    animation: blink 2s ease-in-out infinite;
+    box-shadow: 0 0 6px color-mix(in oklab, var(--up) 60%, transparent);
   }
 
   /* Chat message prose */
   .prose-dark {
-    @apply text-foreground/90 leading-relaxed;
+    color: var(--ink-2);
+    line-height: 1.6;
   }
   .prose-dark h1, .prose-dark h2, .prose-dark h3 {
-    @apply text-foreground font-semibold mt-4 mb-2;
+    color: var(--ink);
+    font-weight: 600;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
   }
   .prose-dark table {
-    @apply w-full text-sm border-collapse;
+    width: 100%;
+    font-size: 0.875rem;
+    border-collapse: collapse;
   }
   .prose-dark th {
-    @apply text-left text-xs uppercase tracking-wider text-muted-foreground border-b border-surface-3 pb-2 font-medium;
+    text-align: left;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-3);
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 0.5rem;
+    font-weight: 500;
   }
   .prose-dark td {
-    @apply py-2 pr-4 border-b border-surface-3/50 font-mono text-sm;
+    padding: 0.5rem 1rem 0.5rem 0;
+    border-bottom: 1px solid var(--line-soft);
+    font-family: var(--font-ibm-mono, monospace);
+    font-size: 0.875rem;
   }
   .prose-dark strong {
-    @apply text-brand-green font-semibold;
+    color: var(--gold);
+    font-weight: 600;
   }
   .prose-dark ul {
-    @apply list-disc list-inside space-y-1 ml-2;
+    list-style-type: disc;
+    list-style-position: inside;
+    margin-left: 0.5rem;
+    row-gap: 0.25rem;
   }
   .prose-dark ol {
-    @apply list-decimal list-inside space-y-1 ml-2;
+    list-style-type: decimal;
+    list-style-position: inside;
+    margin-left: 0.5rem;
+    row-gap: 0.25rem;
   }
   .prose-dark a {
-    @apply text-brand-blue underline underline-offset-2;
+    color: var(--info);
+    text-decoration: underline;
+    text-underline-offset: 2px;
   }
   .prose-dark code {
-    @apply font-mono text-xs bg-surface-3 px-1.5 py-0.5 rounded text-brand-cyan;
+    font-family: var(--font-ibm-mono, monospace);
+    font-size: 0.75rem;
+    background: var(--surface-2);
+    padding: 1px 6px;
+    border-radius: 4px;
+    color: var(--info);
   }
   .prose-dark blockquote {
-    @apply border-l-2 border-brand-blue pl-3 text-muted-foreground italic;
+    border-left: 2px solid var(--info);
+    padding-left: 0.75rem;
+    color: var(--ink-3);
+    font-style: italic;
   }
   .prose-dark hr {
-    @apply border-surface-3 my-4;
+    border-color: var(--line-soft);
+    margin: 1rem 0;
   }
   .prose-dark p {
-    @apply mb-3 last:mb-0;
+    margin-bottom: 0.75rem;
+  }
+  .prose-dark p:last-child {
+    margin-bottom: 0;
   }
 }
 
 @layer utilities {
+  .text-gradient-gold {
+    background: linear-gradient(135deg, var(--gold), var(--gold-deep));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
   .text-gradient-blue {
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    background: linear-gradient(135deg, #6d9fc0, #66b896);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
-  .text-gradient-green {
-    background: linear-gradient(135deg, #10b981, #06b6d4);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .border-gradient {
-    border-image: linear-gradient(135deg, #3b82f6, #8b5cf6) 1;
-  }
-
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;

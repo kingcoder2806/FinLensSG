@@ -237,17 +237,18 @@ export interface EtfProduct {
   ticker: string;
   name: string;
   type: 'bond-etf' | 'equity-etf';
-  nav: number;
-  ytd: number;
+  nav: number | null;          // null when not publicly surfaced in HTML
+  ytd: number | null;          // null when not surfaced
   oneYear: number | null;
   expenseRatio: number | null;
-  aumSgdM: number;
+  aumSgdM: number | null;      // null when not surfaced
   dividendYield: number | null;
   description: string;
   asOf: string;
 }
 
 export const ETF_PRODUCTS: EtfProduct[] = [
+  // ── Broad market / index ──────────────────────────────────────────────────
   {
     ticker: 'A35.SI',
     name: 'ABF Singapore Bond Index Fund',
@@ -263,7 +264,7 @@ export const ETF_PRODUCTS: EtfProduct[] = [
   },
   {
     ticker: 'G3B.SI',
-    name: 'Amova Singapore STI ETF',
+    name: 'Nikko AM Singapore STI ETF',
     type: 'equity-etf',
     nav: 5.23,
     ytd: 10.73,
@@ -273,6 +274,60 @@ export const ETF_PRODUCTS: EtfProduct[] = [
     dividendYield: 3.65,
     description: 'Tracks the Straits Times Index (STI). Invests in the 30 largest Singapore-listed companies. Semi-annual distributions.',
     asOf: '2 Jun 2026',
+  },
+  // ── OCBC group — Lion Global Investors ────────────────────────────────────
+  {
+    ticker: 'CLR.SI',
+    name: 'Lion-OCBC China Leaders ETF',
+    type: 'equity-etf',
+    nav: 1.8524,
+    ytd: null,
+    oneYear: 16.1,
+    expenseRatio: null,
+    aumSgdM: 96,
+    dividendYield: 3.0,
+    description: 'Tracks a diversified index of leading Chinese companies. Managed by Lion Global Investors (OCBC group). 12-month gross dividend yield 3.0%. Source: Lion Global official page, 29 May 2026.',
+    asOf: '29 May 2026',
+  },
+  {
+    ticker: 'HST.SI',
+    name: 'Lion-OCBC HSTECH ETF',
+    type: 'equity-etf',
+    nav: null,
+    ytd: null,
+    oneYear: -7.2,
+    expenseRatio: 0.45,
+    aumSgdM: 479,
+    dividendYield: null,
+    description: 'Tracks the Hang Seng TECH Index. Invests in Hong Kong-listed technology companies. Managed by Lion Global Investors (OCBC group). AUM as at Apr 2026. Annualised since inception: –9.8%.',
+    asOf: '2 Jun 2026',
+  },
+  // ── UOB group — UOB Asset Management ─────────────────────────────────────
+  {
+    ticker: 'PASD.SI',
+    name: 'UOBAM Ping An FTSE ASEAN Dividend ETF',
+    type: 'equity-etf',
+    nav: null,
+    ytd: null,
+    oneYear: null,
+    expenseRatio: 0.45,
+    aumSgdM: null,
+    dividendYield: 6.0,
+    description: 'Tracks the FTSE ASEAN Dividend index. Managed by UOB Asset Management. Listed 29 Jan 2026. UOBAM targets dividend distributions of at least 6.0% p.a. in 2026 and 2027. Too new for 1Y history.',
+    asOf: '3 Jun 2026',
+  },
+  {
+    ticker: 'UA50.SI',
+    name: 'UOBAM FTSE China A50 Index ETF',
+    type: 'equity-etf',
+    nav: null,
+    ytd: null,
+    oneYear: null,
+    expenseRatio: 0.45,
+    aumSgdM: null,
+    dividendYield: null,
+    description: 'Tracks the FTSE China A50 Index. Managed by UOB Asset Management. Annual distributions intended around December. Management fee 0.45% p.a.',
+    asOf: '3 Jun 2026',
   },
 ];
 
@@ -458,14 +513,216 @@ export interface BankInvestment {
   description: string;
 }
 
+// ── Home Loans (illustrative packages — verified Jun 2026, verify with each bank before transacting) ──
+// All-in SORA rates computed using 3M Compounded SORA ≈ 2.07% and 1M Compounded SORA ≈ 2.05% as at Jun 2026.
+
+export interface HomeLoan {
+  bank: BankSlug;
+  packageName: string;
+  type: 'Fixed' | 'SORA';
+  rate: number;      // approximate all-in p.a. for Year 1–2
+  lockin: string;
+  ref: string;
+  minLoan: string;
+  notes: string;
+}
+
+export const HOME_LOANS: HomeLoan[] = [
+  {
+    bank: 'dbs',
+    packageName: '3M SORA + 0.28%',
+    type: 'SORA',
+    rate: 2.35,
+    lockin: 'None',
+    ref: '3M SORA',
+    minLoan: 'S$1,000,000',
+    notes: 'Green Home Loan — Green Mark-certified new launches only. Two free conversions. Y3–4: +0.30%, thereafter +0.60%.',
+  },
+  {
+    bank: 'hsbc',
+    packageName: 'Premier package',
+    type: 'SORA',
+    rate: 1.33,
+    lockin: '2 years',
+    ref: '3M SORA',
+    minLoan: 'S$900,000',
+    notes: 'Effective rate as low as 1.33% p.a. for Premier customers via SmartMortgage deposit-offset feature. Requires ≥S$200k total relationship balance. Non-Premier spreads not publicly disclosed.',
+  },
+  {
+    bank: 'citibank',
+    packageName: '1M SORA + 0.55%',
+    type: 'SORA',
+    rate: 2.60,
+    lockin: '2 years',
+    ref: '1M SORA',
+    minLoan: 'S$100,000',
+    notes: 'Completed property, loans <S$1M. Y3: +0.70%, thereafter +0.85%. Citigold (≥S$1M): spread tightens to +0.45% Y1–2. Fixed option: 1.70% p.a. Y1–2.',
+  },
+  {
+    bank: 'uob',
+    packageName: '3M SORA + 0.70%',
+    type: 'SORA',
+    rate: 2.77,
+    lockin: '2 years',
+    ref: '3M SORA',
+    minLoan: 'S$250,000',
+    notes: 'Direct-to-bank package. Y3: +0.80%, thereafter +1.00%. One free conversion after 24 months.',
+  },
+  {
+    bank: 'maybank',
+    packageName: '3M SORA + 0.70%',
+    type: 'SORA',
+    rate: 2.77,
+    lockin: '2 years',
+    ref: '3M SORA',
+    minLoan: 'S$100,000',
+    notes: 'Completed property floating package. Y3+: +1.00%. Fixed alternatives: 3.30% p.a. (2Y lock-in) or 3.75% p.a. (3Y lock-in).',
+  },
+  {
+    bank: 'ocbc',
+    packageName: '1M SORA + 0.98%',
+    type: 'SORA',
+    rate: 3.03,
+    lockin: '2 years',
+    ref: '1M SORA',
+    minLoan: 'S$200,000 (HDB) / S$300,000 (private)',
+    notes: 'Thereafter: +1.40%. Also offers 2Y fixed packages. Refinancing cash reward up to S$2,800 and HDB refinance bonus until Jun 2026.',
+  },
+  {
+    bank: 'standard-chartered',
+    packageName: '3M SORA + 1.00%',
+    type: 'SORA',
+    rate: 3.07,
+    lockin: '2 years',
+    ref: '3M SORA',
+    minLoan: 'S$100,000',
+    notes: 'Residential property only. Same +1.00% spread throughout (Y1–3 and thereafter). Bank may revise package without prior notice.',
+  },
+];
+
+// ── Credit Cards ──────────────────────────────────────────────────────────────
+
+export type CardType = 'Cashback' | 'Miles';
+
+export interface CreditCard {
+  bank: BankSlug;
+  name: string;
+  type: CardType;
+  headline: string;
+  detail: string;
+  annualFee: string;
+  minIncome: string;  // minimum annual income for principal cardholder
+}
+
+export const CREDIT_CARDS: CreditCard[] = [
+  {
+    bank: 'uob',
+    name: 'UOB One Card',
+    type: 'Cashback',
+    headline: 'Up to 20%',
+    detail: 'Up to 20% rebate at Grab, Shopee, Cold Storage, Giant, Guardian & SPC. Tiered on min S$500/S$1,000/S$2,000 monthly card spend.',
+    annualFee: 'S$196.20 (waived 1st yr)',
+    minIncome: 'S$30,000 (SG/PR) · S$40,000 (foreigners)',
+  },
+  {
+    bank: 'ocbc',
+    name: 'OCBC 365',
+    type: 'Cashback',
+    headline: 'Up to 6%',
+    detail: '6% on dining incl. delivery, 3% on groceries & transport, 0.3% unlimited base. Min S$800/mo. Auto-fee waiver linked to spending.',
+    annualFee: 'S$196.20 (waived 1st yr)',
+    minIncome: '—',
+  },
+  {
+    bank: 'dbs',
+    name: 'DBS Live Fresh',
+    type: 'Cashback',
+    headline: '0.3%',
+    detail: '0.3% unlimited cashback on all spend — no category caps. Zero FX fees promo ongoing. Min S$800/mo spend to unlock cashback tier.',
+    annualFee: 'S$196.20 (waived 1st yr)',
+    minIncome: 'S$30,000',
+  },
+  {
+    bank: 'maybank',
+    name: 'Maybank Family & Friends',
+    type: 'Cashback',
+    headline: '8%',
+    detail: '8% cashback across selected everyday categories. 3-year annual fee waiver. Spend-based gift campaign valid till 30 Jun 2026.',
+    annualFee: 'Free (3yr waiver)',
+    minIncome: 'S$30,000 (SG/PR) · S$45,000 (Malaysians) · S$60,000 (foreigners)',
+  },
+  {
+    bank: 'dbs',
+    name: 'DBS Altitude',
+    type: 'Miles',
+    headline: '1.3–4 mpd',
+    detail: 'Miles never expire. 4 mpd on flights & hotels via DBS Travel Marketplace. Airport lounge access with Visa Infinite.',
+    annualFee: 'S$196.20',
+    minIncome: '—',
+  },
+  {
+    bank: 'citibank',
+    name: 'Citi Rewards',
+    type: 'Miles',
+    headline: '10X Points',
+    detail: '10X Rewards points (≈4 mpd) on online purchases and in-store shopping. Points never expire. Current welcome offer: 40,000 bonus ThankYou Points.',
+    annualFee: 'S$196.20 (waived 1st yr)',
+    minIncome: '—',
+  },
+  {
+    bank: 'standard-chartered',
+    name: 'SC Journey',
+    type: 'Miles',
+    headline: '3 mpd',
+    detail: '3 mpd on online spend + 2 mpd on all local spend incl. transport & dining. No minimum spend required.',
+    annualFee: 'S$196.20 (waived 1st yr)',
+    minIncome: '—',
+  },
+  {
+    bank: 'hsbc',
+    name: 'HSBC Revolution',
+    type: 'Miles',
+    headline: 'Up to 20× Rewards',
+    detail: '20× accelerated Rewards points on online & contactless spend. No annual fee — best zero-fee rewards/miles card. Sign-up promo runs 1 Apr–30 Jun 2026. Finance charge: 27.8% p.a.',
+    annualFee: 'S$0',
+    minIncome: 'S$30,000 (SG/PR) · S$40,000 (self-employed/foreigners)',
+  },
+];
+
+// ── FD per-bank metadata (min placement, promo vs board) ─────────────────────
+
+export interface FdBankMeta {
+  bank: BankSlug;
+  minAmount: number;
+  isPromo: boolean;
+}
+
+export const FD_BANK_META: FdBankMeta[] = [
+  { bank: 'dbs',               minAmount: 1000,  isPromo: false },
+  { bank: 'ocbc',              minAmount: 20000, isPromo: true  },
+  { bank: 'uob',               minAmount: 10000, isPromo: true  },
+  { bank: 'standard-chartered', minAmount: 25000, isPromo: true  },
+  { bank: 'citibank',          minAmount: 1000,  isPromo: false },
+  { bank: 'hsbc',              minAmount: 30000, isPromo: true  },
+  { bank: 'maybank',           minAmount: 20000, isPromo: true  },
+];
+
 export const BANK_INVESTMENTS: BankInvestment[] = [
   {
     bank: 'dbs',
-    productName: 'DBS digiPortfolio',
+    productName: 'DBS digiPortfolio – Asia',
     type: 'Robo-advisor',
-    minInvestment: 'From S$100 (Retirement)',
-    fees: '0.25% p.a. (Income) / 0.75% p.a. (Global/Asia)',
-    description: 'Ready-made managed portfolios: Income (bond-style), Global and Asia (low-cost ETFs). Recurring top-ups supported.',
+    minInvestment: 'From S$1,000',
+    fees: '0.75% p.a. flat annual portfolio fee',
+    description: 'Bank-curated ETF portfolio focused on Asian equities via DBS CIO Insights. Medium-risk performance (gross, cumulative) as of 31 Dec 2025: 1Y +12.7%, 3Y +22.9%, 5Y +11.1%, since inception +23.1%.',
+  },
+  {
+    bank: 'dbs',
+    productName: 'DBS digiPortfolio – Global',
+    type: 'Robo-advisor',
+    minInvestment: 'From S$1,000',
+    fees: '0.75% p.a. flat annual portfolio fee',
+    description: 'Bank-curated ETF portfolio with global diversification via DBS CIO Insights. Medium-risk performance (gross, cumulative) as of 31 Dec 2025: 1Y +18.9%, 3Y +47.8%, 5Y +34.9%, since inception +58.1%.',
   },
   {
     bank: 'dbs',

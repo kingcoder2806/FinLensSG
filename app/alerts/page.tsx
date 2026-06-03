@@ -1,12 +1,10 @@
 import { Bell } from 'lucide-react';
-import { Sidebar } from '@/components/layout/Sidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function AlertsPage() {
   return (
-    <div className="flex">
-      <Sidebar />
-      <main className="mx-auto w-full max-w-3xl px-4 py-6 md:px-6">
+    <div className="wrap" style={{ paddingTop: 40, paddingBottom: 60 }}>
+      <div className="mx-auto w-full max-w-3xl">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -20,7 +18,7 @@ export default function AlertsPage() {
             </p>
           </CardContent>
         </Card>
-      </main>
+      </div>
     </div>
   );
 }
