@@ -12,6 +12,7 @@ import {
   Search,
   Menu,
   X,
+  Users,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -19,6 +20,7 @@ const NAV_ITEMS = [
   { href: '/chat', label: 'Ask Fin', icon: Sparkles },
   { href: '/compare', label: 'Compare', icon: BarChart3 },
   { href: '/banks/dbs', label: 'Banks', icon: Building2 },
+  { href: '/contacts', label: 'Advisors', icon: Users },
   { href: '/alerts', label: 'Alerts', icon: Bell, soon: true },
 ];
 
