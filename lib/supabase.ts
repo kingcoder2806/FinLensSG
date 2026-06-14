@@ -188,3 +188,74 @@ export async function getLatestFdRates(): Promise<RateHistoryRow[]> {
   }
   return latest;
 }
+
+// ── Upsert helpers for the automated rate updater (/api/check-rates) ─────────
+// Each "current view" table is upserted on a natural key so the latest scrape
+// overwrites the displayed row, while rate_history stays append-only for trends.
+
+type UpsertResult = { count: number; error: string | null };
+
+async function upsert(
+  table: string,
+  rows: Record<string, unknown>[],
+  onConflict: string,
+): Promise<UpsertResult> {
+  if (rows.length === 0) return { count: 0, error: null };
+  const stamped = rows.map((r) => ({ ...r, updated_at: new Date().toISOString() }));
+  const { error } = await supabaseAdmin.from(table).upsert(stamped, { onConflict });
+  if (error) {
+    console.error(`[Supabase] upsert ${table} error:`, error.message);
+    return { count: 0, error: error.message };
+  }
+  return { count: rows.length, error: null };
+}
+
+export function upsertSavingsAccounts(
+  rows: Omit<SavingsAccountRow, 'id' | 'updated_at'>[],
+): Promise<UpsertResult> {
+  return upsert('savings_accounts', rows, 'bank_slug,account_name');
+}
+
+export function upsertHomeLoans(
+  rows: Omit<HomeLoanRow, 'id' | 'created_at' | 'updated_at'>[],
+): Promise<UpsertResult> {
+  return upsert('home_loans', rows, 'bank_slug,package_name');
+}
+
+export function upsertCreditCards(
+  rows: Omit<CreditCardRow, 'id' | 'created_at' | 'updated_at'>[],
+): Promise<UpsertResult> {
+  return upsert('credit_cards', rows, 'bank_slug,name');
+}
+
+export function upsertEtfProducts(
+  rows: Omit<EtfProductRow, 'id' | 'updated_at'>[],
+): Promise<UpsertResult> {
+  return upsert('etf_products', rows, 'ticker');
+}
+
+export function upsertBonds(
+  rows: Omit<BondRow, 'id' | 'updated_at'>[],
+): Promise<UpsertResult> {
+  return upsert('bonds', rows, 'bond_name,maturity');
+}
+
+// ── Scrape run logging ───────────────────────────────────────────────────────
+
+export interface ScrapeRunRow {
+  id: string;
+  started_at: string;
+  finished_at: string | null;
+  sources_total: number;
+  sources_ok: number;
+  rows_written: number;
+  status: string;            // 'success' | 'partial' | 'error'
+  detail: Record<string, unknown> | null;
+}
+
+export async function logScrapeRun(
+  run: Omit<ScrapeRunRow, 'id'>,
+): Promise<void> {
+  const { error } = await supabaseAdmin.from('scrape_runs').insert(run);
+  if (error) console.error('[Supabase] logScrapeRun error:', error.message);
+}

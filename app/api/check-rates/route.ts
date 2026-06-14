@@ -4,21 +4,39 @@ import { generateText, tool } from 'ai';
 import { z } from 'zod';
 import { RATE_CHECK_MANIFEST, type BankCheckEntry } from '@/constants/rateCheckManifest';
 import { supabaseAdmin, getLatestFdRates } from '@/lib/supabase';
+import { runRateUpdate } from '@/lib/update-rates';
+import { browserHeaders } from '@/lib/scraper';
+import type { ExtractKind } from '@/constants/sources';
 
-const CHANGE_THRESHOLD = 0.10; // flag movements ≥ 0.10 percentage points
+// Live network fetches + Claude extraction: never cache, allow long runtime.
+// On Vercel Hobby the effective cap is 60s — use ?phase=fd or ?phase=extended,
+// or ?kind=etf to run a slice per invocation. Pro allows the full batch.
+export const dynamic = 'force-dynamic';
+export const maxDuration = 300;
 
-// Protect the endpoint — set CHECK_RATES_SECRET in .env.local
+const CHANGE_THRESHOLD = 0.10; // flag FD movements ≥ 0.10 percentage points
+
+/**
+ * Auth: accepts the configured secret (CHECK_RATES_SECRET, or Vercel's CRON_SECRET)
+ * via the legacy `x-check-secret` header, an `Authorization: Bearer` header, or a
+ * `?secret=` query param. If no secret env var is set, the endpoint stays open (dev).
+ */
 function isAuthorized(req: Request): boolean {
-  const secret = process.env.CHECK_RATES_SECRET;
+  const secret = process.env.CHECK_RATES_SECRET || process.env.CRON_SECRET;
   if (!secret) return true; // no secret set → open (dev only)
-  return req.headers.get('x-check-secret') === secret;
+  const header = req.headers.get('x-check-secret');
+  const auth = req.headers.get('authorization') ?? '';
+  const bearer = auth.toLowerCase().startsWith('bearer ') ? auth.slice(7).trim() : '';
+  const query = new URL(req.url).searchParams.get('secret') ?? '';
+  return header === secret || bearer === secret || query === secret;
 }
 
 async function fetchPage(url: string): Promise<string | null> {
   try {
     const res = await fetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; FinLensSG-RateCheck/1.0)' },
-      signal: AbortSignal.timeout(12_000),
+      headers: browserHeaders(url),
+      redirect: 'follow',
+      signal: AbortSignal.timeout(20_000),
     });
     if (!res.ok) return null;
     const html = await res.text();
@@ -105,14 +123,12 @@ interface BankResult {
   error?: string;
 }
 
-export async function POST(req: Request) {
-  if (!isAuthorized(req)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const body = await req.json().catch(() => ({}));
-  const dryRun: boolean = body.dryRun === true;
-
+/**
+ * Phase 1 — fixed deposits via the curated manifest, with change detection.
+ * Kept verbatim from the original route: the manifest baselines and the
+ * ≥0.10pp change flagging feed the (future) alerts pipeline.
+ */
+async function runFdManifestCheck(dryRun: boolean) {
   const previousRates = await getLatestFdRates();
   const prevMap = new Map(
     previousRates.map((r) => [`${r.bank_slug}:${r.tenor_months}`, r])
@@ -224,9 +240,7 @@ export async function POST(req: Request) {
   const totalInserted = results.reduce((n, r) => n + r.rowsInserted, 0);
   const failed = results.filter((r) => r.status !== 'ok');
 
-  return NextResponse.json({
-    checkedAt: new Date().toISOString(),
-    dryRun,
+  return {
     summary: {
       banksChecked: RATE_CHECK_MANIFEST.length,
       banksOk: results.filter((r) => r.status === 'ok').length,
@@ -236,5 +250,104 @@ export async function POST(req: Request) {
     },
     flagged: results.filter((r) => r.changes.length > 0),
     failed,
-  });
+  };
 }
+
+type Phase = 'fd' | 'extended' | 'all';
+
+const VALID_KINDS: ExtractKind[] = ['fd', 'savings', 'homeLoan', 'creditCard', 'etf', 'bond', 'benchmark'];
+
+interface RunParams {
+  dryRun: boolean;
+  phase: Phase;
+  only?: ExtractKind[];
+  sourceIds?: string[];
+}
+
+async function readParams(req: Request): Promise<RunParams> {
+  const params = new URL(req.url).searchParams;
+  let dryRun = params.get('dry') === '1' || params.get('dryRun') === 'true';
+  let phase = (params.get('phase') as Phase) || 'all';
+  let only: ExtractKind[] | undefined;
+  let sourceIds: string[] | undefined;
+
+  const kindParam = params.get('kind');
+  if (kindParam) {
+    const kinds = kindParam.split(',').map((k) => k.trim())
+      .filter((k): k is ExtractKind => (VALID_KINDS as string[]).includes(k));
+    if (kinds.length) only = kinds;
+  }
+  const sourceParam = params.get('source');
+  if (sourceParam) {
+    const ids = sourceParam.split(',').map((s) => s.trim()).filter(Boolean);
+    if (ids.length) sourceIds = ids;
+  }
+
+  if (req.method === 'POST') {
+    const body = await req.json().catch(() => ({} as any));
+    if (body.dryRun === true) dryRun = true;
+    if (body.phase) phase = body.phase as Phase;
+    if (Array.isArray(body.only)) only = body.only as ExtractKind[];
+    if (Array.isArray(body.sourceIds)) sourceIds = body.sourceIds as string[];
+  }
+  if (!['fd', 'extended', 'all'].includes(phase)) phase = 'all';
+  return { dryRun, phase, only, sourceIds };
+}
+
+async function handle(req: Request) {
+  if (!isAuthorized(req)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return NextResponse.json(
+      { error: 'ANTHROPIC_API_KEY not configured — extraction needs Claude' },
+      { status: 503 },
+    );
+  }
+
+  const { dryRun, phase, only, sourceIds } = await readParams(req);
+  const targeted = Boolean(only || sourceIds);
+  console.log('[check-rates] run', { phase, dryRun, only, sourceIds });
+
+  const response: Record<string, unknown> = {
+    checkedAt: new Date().toISOString(),
+    dryRun,
+    phase,
+    ...(only ? { only } : {}),
+    ...(sourceIds ? { sourceIds } : {}),
+  };
+
+  try {
+    // Phase 1: fixed deposits (manifest + change detection). Skipped when the
+    // caller targets specific source ids, or filters to non-FD kinds.
+    const wantFd =
+      (phase === 'fd' || phase === 'all') && (!only || only.includes('fd')) && !sourceIds;
+    if (wantFd) {
+      response.fixedDeposits = await runFdManifestCheck(dryRun);
+    }
+
+    // Phase 2: every other product + the extra sources (aggregators, fund
+    // managers, SGX) from the registry in constants/sources.ts. FD is excluded
+    // here to avoid double-writing what the manifest pass already handled.
+    if (phase === 'extended' || phase === 'all' || targeted) {
+      const extendedOnly = (only ?? ['savings', 'homeLoan', 'creditCard', 'etf', 'bond'])
+        .filter((k) => k !== 'fd');
+      if (extendedOnly.length || sourceIds) {
+        response.extended = await runRateUpdate({
+          only: extendedOnly.length ? extendedOnly : undefined,
+          sourceIds,
+          dryRun,
+        });
+      }
+    }
+
+    return NextResponse.json(response);
+  } catch (err) {
+    console.error('[check-rates] run failed:', err);
+    return NextResponse.json({ ...response, error: String(err) }, { status: 500 });
+  }
+}
+
+// GET so Vercel Cron (which issues GET) can trigger it; POST for manual/CI use.
+export const GET = handle;
+export const POST = handle;

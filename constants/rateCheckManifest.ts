@@ -50,7 +50,7 @@ export const RATE_CHECK_MANIFEST: BankCheckEntry[] = [
   {
     bankSlug: 'uob',
     bankName: 'UOB',
-    sourceUrl: 'https://www.uob.com.sg/personal/save/deposits/fixed-deposit.page',
+    sourceUrl: 'https://www.uob.com.sg/personal/save/fixed-deposits/singapore-dollar-fixed-deposit.page',
     tenors: [
       { months: 1,  boardRate: 0.05, promoRate: null, minDepositBoard: 5000,  minDepositPromo: null },
       { months: 3,  boardRate: 0.05, promoRate: null, minDepositBoard: 5000,  minDepositPromo: null },
@@ -75,7 +75,7 @@ export const RATE_CHECK_MANIFEST: BankCheckEntry[] = [
   {
     bankSlug: 'citibank',
     bankName: 'Citibank',
-    sourceUrl: 'https://www.citibank.com.sg/personal-banking/deposits/fixed-deposit/',
+    sourceUrl: 'https://www.citibank.com.sg/personal-banking/deposits/fixed-deposit-account',
     tenors: [
       { months: 1,  boardRate: 0.60, promoRate: null, minDepositBoard: 10000, minDepositPromo: null },
       { months: 3,  boardRate: 0.60, promoRate: null, minDepositBoard: 10000, minDepositPromo: null },
@@ -87,7 +87,7 @@ export const RATE_CHECK_MANIFEST: BankCheckEntry[] = [
   {
     bankSlug: 'hsbc',
     bankName: 'HSBC',
-    sourceUrl: 'https://www.hsbc.com.sg/savings/products/time-deposit/',
+    sourceUrl: 'https://www.hsbc.com.sg/accounts/products/time-deposit/',
     tenors: [
       { months: 1,  boardRate: 0.05, promoRate: null, minDepositBoard: 5000,  minDepositPromo: null },
       { months: 3,  boardRate: 0.05, promoRate: 0.58, minDepositBoard: 5000,  minDepositPromo: 30000 },
@@ -100,7 +100,7 @@ export const RATE_CHECK_MANIFEST: BankCheckEntry[] = [
   {
     bankSlug: 'maybank',
     bankName: 'Maybank',
-    sourceUrl: 'https://www.maybank2u.com.sg/en/personal/deposit/time-deposit.page',
+    sourceUrl: 'https://www.maybank2u.com.sg/en/personal/accounts/time-deposit/singapore-dollar-time-deposit.page',
     tenors: [
       { months: 1,  boardRate: 0.05, promoRate: null, minDepositBoard: null,  minDepositPromo: null },
       { months: 3,  boardRate: 0.25, promoRate: null, minDepositBoard: null,  minDepositPromo: null },
