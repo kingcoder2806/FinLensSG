@@ -1,8 +1,11 @@
+'use client';
+
 import Link from 'next/link';
 import { ExternalLink, Phone, Mail } from 'lucide-react';
 import type { BankInfo } from '@/constants/banks';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { BankLogo } from '@/components/banks/BankLogo';
 
 interface BankCardProps {
   bank: BankInfo;
@@ -19,7 +22,7 @@ export function BankCard({ bank, topRate, topRateLabel }: BankCardProps) {
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-2xl">{bank.logo}</span>
+              <BankLogo bank={bank} size={30} />
               <div>
                 <h3 className={`font-semibold text-sm ${bank.textClass}`}>{bank.name}</h3>
                 <p className="text-[10px] text-muted-foreground">Est. {bank.established}</p>

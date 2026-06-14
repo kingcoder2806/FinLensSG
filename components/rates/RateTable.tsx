@@ -2,6 +2,7 @@
 
 import { BANK_MAP } from '@/constants/banks';
 import type { BankSlug } from '@/constants/banks';
+import { BankLogo } from '@/components/banks/BankLogo';
 import { cn, formatRate } from '@/lib/utils';
 
 interface RateRow {
@@ -78,7 +79,7 @@ export function RateTable({
               >
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-base">{bank?.logo}</span>
+                    {bank ? <BankLogo bank={bank} size={18} rounded={4} /> : null}
                     <span className={`text-sm font-medium ${bank?.textClass}`}>
                       {bank?.shortName ?? row.bank}
                     </span>

@@ -20,6 +20,7 @@ function parseArgs(argv: string[]): RunOptions {
   const opts: RunOptions = {};
   for (const arg of argv) {
     if (arg === '--dry' || arg === '--dry-run') opts.dryRun = true;
+    else if (arg === '--render') opts.render = true;
     else if (arg.startsWith('--only=')) {
       opts.only = arg.slice('--only='.length).split(',').map((s) => s.trim()) as ExtractKind[];
     } else if (arg.startsWith('--source=')) {

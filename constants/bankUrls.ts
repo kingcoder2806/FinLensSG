@@ -22,7 +22,7 @@ export const BANK_URLS = {
   },
   sc: {
     savings: "https://www.sc.com/sg/save/current-accounts/bonussaver/",
-    fixedDeposit: "https://www.sc.com/sg/save/time-deposits/sgd-time-deposit/",
+    fixedDeposit: "https://www.sc.com/sg/save/time-deposits/singapore-dollar-time-deposit/",
     funds: "https://www.sc.com/sg/wealth/investment/unit-trusts/",
     homeLoan: "https://www.sc.com/sg/borrow/mortgages/",
     creditCard: "https://www.sc.com/sg/credit-cards/",

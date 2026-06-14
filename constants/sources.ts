@@ -48,6 +48,8 @@ export interface ScrapeSource {
   bankSlug?: BankSlug;
   /** Default true. Set false to keep a source registered but skip it on runs. */
   enabled?: boolean;
+  /** Force the headless-browser renderer (JS-rendered or bot-protected pages). */
+  render?: boolean;
   /** Operational notes (rendering quirks, rebrands, slow endpoints, etc.). */
   note?: string;
 }
@@ -83,21 +85,24 @@ const AGGREGATOR_SOURCES: ScrapeSource[] = [
     url: 'https://www.moneysmart.sg/savings-account',
     sourceType: 'aggregator',
     extract: 'savings',
-    note: 'Cross-bank savings-account comparison with effective max rates.',
+    render: true,
+    note: 'Cross-bank savings-account comparison. Bot-protected (403 on plain fetch) — needs headless render.',
   },
   {
     id: 'agg:moneysmart:homeLoan',
     url: 'https://www.moneysmart.sg/home-loan',
     sourceType: 'aggregator',
     extract: 'homeLoan',
-    note: 'Cross-bank SORA + fixed mortgage packages, incl. HDB 2.6% reference.',
+    render: true,
+    note: 'Cross-bank SORA + fixed mortgage packages. Bot-protected — needs headless render.',
   },
   {
     id: 'agg:moneysmart:creditCard',
     url: 'https://www.moneysmart.sg/credit-cards',
     sourceType: 'aggregator',
     extract: 'creditCard',
-    note: 'Cross-bank cashback / miles card league table.',
+    render: true,
+    note: 'Cross-bank cashback / miles card league table. Bot-protected — needs headless render.',
   },
   {
     id: 'agg:seedly:fd',
@@ -166,7 +171,8 @@ const SGX_SOURCES: ScrapeSource[] = [
     url: 'https://api.sgx.com/etfs/v1.0?params=nc%2Cnav%2Cnavchange%2Cnavpercentchange%2Cmgrname',
     sourceType: 'sgx',
     extract: 'etf',
-    note: 'SGX public ETF JSON feed (NAV + manager). The /securities/etf-screener HTML page is JS-rendered; this JSON endpoint is the scrapeable backing API.',
+    render: true,
+    note: 'SGX public ETF JSON feed (NAV + manager). Returns 403 to datacenter IPs on plain fetch; headless render may bypass. Fund-manager pages already cover ETF NAVs if this stays blocked.',
   },
   {
     id: 'sgx:retail-bonds',

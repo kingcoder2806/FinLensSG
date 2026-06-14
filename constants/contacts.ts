@@ -8,284 +8,321 @@ export type ContactSpecialization =
   | 'investments'
   | 'general';
 
+/**
+ * Real, officially-published contact channels for each bank's retail / wealth desks.
+ *
+ * Banks do not publish named individual relationship managers with direct lines, so
+ * these are the genuine points of contact a customer would actually use: customer-service
+ * hotlines, priority/wealth banking desks, and mortgage lines — plus the official
+ * "contact us / request a callback" page where a dedicated specialist follows up.
+ *
+ * Sources: each bank's official Contact Us pages (verified Jun 2026). Hotlines and
+ * promotions change; the `url` is the canonical page to confirm before relying on a number.
+ */
 export interface BankContact {
   id: string;
   bank: BankSlug;
+  /** Desk / channel name, e.g. "DBS Treasures Priority Banking". */
   name: string;
+  /** Short descriptor of the desk. */
   role: string;
   specializations: ContactSpecialization[];
-  email: string;
-  phone: string;
-  bio: string;
-  yearsExp: number;
-  languages: string[];
+  /** Primary local hotline (or null when the desk is callback/web only). */
+  phone: string | null;
+  /** Number to dial from overseas, when published. */
+  phoneOverseas?: string;
+  /** Official email, when the bank publishes one for this desk. */
+  email?: string;
+  /** Operating hours, when published. */
+  hours?: string;
+  /** Official contact / request-a-callback page. */
+  url: string;
+  /** What this desk handles. */
+  description: string;
 }
 
 export const BANK_CONTACTS: BankContact[] = [
   // ── DBS / POSB ─────────────────────────────────────────────────────────────
   {
-    id: 'dbs-rachel-lim',
+    id: 'dbs-customer-service',
     bank: 'dbs',
-    name: 'Rachel Lim',
-    role: 'Senior Relationship Manager',
-    specializations: ['savings', 'credit-card', 'general'],
-    email: 'rachel.lim@dbs.com',
-    phone: '+65 6327 2265',
-    bio: 'Rachel has been with DBS for over 8 years, helping customers optimise their savings strategy and choose the right credit solutions. She specialises in the DBS Multiplier account and DBS card portfolio.',
-    yearsExp: 8,
-    languages: ['English', 'Mandarin'],
+    name: 'DBS Customer Service',
+    role: 'General banking hotline',
+    specializations: ['general', 'savings', 'credit-card'],
+    phone: '1800 111 1111',
+    phoneOverseas: '+65 6327 2265',
+    email: 'customerservice@dbs.com',
+    hours: '24 hours daily',
+    url: 'https://www.dbs.com.sg/personal/contact-us.page',
+    description:
+      'Round-the-clock line for DBS/POSB accounts, the DBS Multiplier savings account, cards and PayLah!, and general enquiries.',
   },
   {
-    id: 'dbs-david-tan',
+    id: 'dbs-treasures',
     bank: 'dbs',
-    name: 'David Tan',
-    role: 'Home Loan Specialist',
+    name: 'DBS Treasures',
+    role: 'Priority & wealth banking',
+    specializations: ['investments', 'fixed-deposit', 'general'],
+    phone: '1800 221 1111',
+    phoneOverseas: '+65 6221 1111',
+    hours: 'Mon–Fri 9am–9pm, Sat 9am–1pm',
+    url: 'https://www.dbs.com.sg/treasures/contact-me.page',
+    description:
+      'Wealth desk for fixed deposit placements, structured deposits and DBS digiPortfolio. Request a relationship manager callback via the form.',
+  },
+  {
+    id: 'dbs-home-loan',
+    bank: 'dbs',
+    name: 'DBS Home Loan Specialists',
+    role: 'Mortgage advisory (callback)',
     specializations: ['home-loan'],
-    email: 'david.tan@dbs.com',
-    phone: '+65 6327 8899',
-    bio: 'David is a certified mortgage advisor with 11 years of experience structuring DBS home loan packages. He covers both HDB and private property financing, including the DBS Green Home Loan.',
-    yearsExp: 11,
-    languages: ['English', 'Mandarin', 'Cantonese'],
-  },
-  {
-    id: 'dbs-priya-sharma',
-    bank: 'dbs',
-    name: 'Priya Sharma',
-    role: 'Wealth Planning Associate',
-    specializations: ['fixed-deposit', 'investments', 'general'],
-    email: 'priya.sharma@dbs.com',
-    phone: '+65 6327 5566',
-    bio: 'Priya advises high-net-worth individuals on fixed deposit laddering, structured deposits, and DBS digiPortfolio. She holds the CACS certification and has worked in wealth management for 6 years.',
-    yearsExp: 6,
-    languages: ['English', 'Hindi', 'Tamil'],
+    phone: null,
+    url: 'https://www.dbs.com.sg/Contact/dbs/homeloans/contact-me/default.page',
+    description:
+      'Submit the home-loan enquiry form and a DBS mortgage specialist calls you back to structure HDB, private or Green Home Loan packages.',
   },
 
   // ── OCBC ───────────────────────────────────────────────────────────────────
   {
-    id: 'ocbc-jason-wong',
+    id: 'ocbc-customer-service',
     bank: 'ocbc',
-    name: 'Jason Wong',
-    role: 'Deposits & Savings Manager',
-    specializations: ['savings', 'fixed-deposit', 'general'],
-    email: 'jason.wong@ocbc.com',
-    phone: '+65 6363 3333',
-    bio: "Jason leads OCBC's retail deposits advisory team. He is the go-to contact for OCBC 360 account bonus tier optimisation and fixed deposit placements, particularly for fresh funds and rollover strategies.",
-    yearsExp: 9,
-    languages: ['English', 'Mandarin'],
+    name: 'OCBC Personal Banking',
+    role: '24-hour customer service',
+    specializations: ['general', 'savings', 'fixed-deposit'],
+    phone: '1800 363 3333',
+    phoneOverseas: '+65 6363 3333',
+    email: 'contactus@ocbc.com',
+    hours: '24 hours daily',
+    url: 'https://www.ocbc.com/personal-banking/contact-us',
+    description:
+      'Main line for the OCBC 360 account, fixed deposits, cards and general banking. Bonus-tier and placement enquiries handled here.',
   },
   {
-    id: 'ocbc-mei-ling-chen',
+    id: 'ocbc-premier',
     bank: 'ocbc',
-    name: 'Mei Ling Chen',
-    role: 'Property Finance Advisor',
+    name: 'OCBC Premier Banking',
+    role: 'Premier & wealth banking',
+    specializations: ['investments', 'general'],
+    phone: '1800 773 6437',
+    phoneOverseas: '+65 6530 5930',
+    hours: 'Mon–Fri 9am–6pm',
+    url: 'https://www.ocbc.com/personal-banking/premier-banking/services.page',
+    description:
+      'Dedicated Premier desk (1800 PREMIER) for RoboInvest, Blue Chip Investment Plan, unit trusts and wealth advisory.',
+  },
+  {
+    id: 'ocbc-home-loan',
+    bank: 'ocbc',
+    name: 'OCBC Home Loan Specialists',
+    role: 'Mortgage advisory',
     specializations: ['home-loan'],
-    email: 'meiling.chen@ocbc.com',
-    phone: '+65 6363 7788',
-    bio: 'Mei Ling specialises in OCBC home loan packages for both HDB and private properties. With 10 years in property finance, she can structure SORA-linked and fixed-rate packages to minimise your total interest cost.',
-    yearsExp: 10,
-    languages: ['English', 'Mandarin', 'Hokkien'],
-  },
-  {
-    id: 'ocbc-arjun-nair',
-    bank: 'ocbc',
-    name: 'Arjun Nair',
-    role: 'Premier Banking Advisor',
-    specializations: ['investments', 'general', 'credit-card'],
-    email: 'arjun.nair@ocbc.com',
-    phone: '+65 6363 9900',
-    bio: 'Arjun manages Premier Banking relationships at OCBC, covering RoboInvest portfolios, Blue Chip Investment Plans, and OCBC Premier credit card benefits. He has 7 years in private and premier banking.',
-    yearsExp: 7,
-    languages: ['English', 'Tamil', 'Malay'],
+    phone: '6319 9756',
+    hours: 'Mon–Fri 9am–6pm',
+    url: 'https://www.ocbc.com/personal-banking/loans/home-loans',
+    description:
+      'Speak to a home-loan specialist about SORA-linked and fixed-rate packages for HDB and private property, plus refinancing.',
   },
 
   // ── UOB ────────────────────────────────────────────────────────────────────
   {
-    id: 'uob-sarah-ng',
+    id: 'uob-customer-service',
     bank: 'uob',
-    name: 'Sarah Ng',
-    role: 'Deposits Specialist',
-    specializations: ['fixed-deposit', 'savings'],
-    email: 'sarah.ng@uob.com.sg',
-    phone: '+65 6222 2121',
-    bio: "Sarah is UOB's lead deposits specialist, with deep expertise in UOB One Account bonus tier structures and fixed deposit promotional rates. She helps customers time their placements to maximise returns.",
-    yearsExp: 7,
-    languages: ['English', 'Mandarin'],
+    name: 'UOB Customer Service',
+    role: 'General banking hotline',
+    specializations: ['general', 'savings', 'credit-card'],
+    phone: '1800 222 2121',
+    phoneOverseas: '+65 6222 2121',
+    email: 'Customer.Service@UOBgroup.com',
+    hours: '24 hours daily',
+    url: 'https://www.uobgroup.com/uobgroup/contact-us/index.page',
+    description:
+      'Main line for the UOB One account, fixed deposits, UOB cards and CashPlus, and general enquiries.',
   },
   {
-    id: 'uob-michael-lee',
+    id: 'uob-privilege',
     bank: 'uob',
-    name: 'Michael Lee',
-    role: 'Senior Mortgage Manager',
+    name: 'UOB Privilege Banking',
+    role: 'Priority & wealth banking',
+    specializations: ['investments', 'fixed-deposit', 'general'],
+    phone: '1800 222 9889',
+    phoneOverseas: '+65 6222 9889',
+    hours: 'Mon–Fri 9am–6pm',
+    url: 'https://www.uob.com.sg/privilegebanking/index.page',
+    description:
+      'Priority banking desk for wealth-on-TMRW portfolios, United SGD Fund, unit trusts and deposit strategies.',
+  },
+  {
+    id: 'uob-home-loan',
+    bank: 'uob',
+    name: 'UOB Property Loan Specialists',
+    role: 'Mortgage advisory',
     specializations: ['home-loan'],
-    email: 'michael.lee@uob.com.sg',
-    phone: '+65 6222 5566',
-    bio: 'Michael has originated over S$400m in UOB home loans over his 12-year career. He specialises in complex cases — multi-property portfolios, foreign buyers, and high TDSR situations.',
-    yearsExp: 12,
-    languages: ['English', 'Mandarin', 'Bahasa Indonesia'],
-  },
-  {
-    id: 'uob-farah-rahman',
-    bank: 'uob',
-    name: 'Farah Binte Rahman',
-    role: 'Credit Solutions Manager',
-    specializations: ['credit-card', 'general'],
-    email: 'farah.rahman@uob.com.sg',
-    phone: '+65 6222 3399',
-    bio: 'Farah leads the consumer credit advisory team at UOB, specialising in the UOB One Card ecosystem and helping customers optimise cashback and rebates across Grab, Shopee, and everyday spend.',
-    yearsExp: 5,
-    languages: ['English', 'Malay', 'Mandarin'],
+    phone: '1800 388 2121',
+    email: 'mortgagesales@uobgroup.com',
+    hours: 'Mon–Fri 9am–6pm',
+    url: 'https://www.uob.com.sg/personal/borrow/property-loans/private-home-loan.page',
+    description:
+      'Senior property specialists for HDB and private home loans, refinancing and complex/multi-property cases.',
   },
 
   // ── Standard Chartered ─────────────────────────────────────────────────────
   {
-    id: 'sc-nicholas-raj',
+    id: 'sc-phone-banking',
     bank: 'standard-chartered',
-    name: 'Nicholas Raj',
-    role: 'Priority Banking Manager',
+    name: 'Standard Chartered Phone Banking',
+    role: '24-hour client care',
     specializations: ['general', 'savings', 'fixed-deposit'],
-    email: 'nicholas.raj@sc.com',
-    phone: '+65 6747 7000',
-    bio: 'Nicholas manages Priority Banking relationships at StanChart, with expertise in Bonus$aver account structuring and multi-currency deposit strategies. He has 9 years in international banking.',
-    yearsExp: 9,
-    languages: ['English', 'Tamil', 'Hindi'],
+    phone: '1800 747 7000',
+    phoneOverseas: '+65 6747 7000',
+    email: 'SG.ServiceRequest@sc.com',
+    hours: '24 hours daily',
+    url: 'https://www.sc.com/sg/help/contact-us/',
+    description:
+      'Main line for the Bonus$aver account, SGD time deposits, cards and general banking. SG.ServiceRequest@sc.com handles email service instructions; chat agents 8am–8pm daily.',
   },
   {
-    id: 'sc-amanda-yeo',
+    id: 'sc-priority',
     bank: 'standard-chartered',
-    name: 'Amanda Yeo',
-    role: 'Mortgage Specialist',
+    name: 'Standard Chartered Priority Banking',
+    role: 'Priority & wealth banking',
+    specializations: ['investments', 'general', 'fixed-deposit'],
+    phone: '1800 846 8000',
+    phoneOverseas: '+65 6846 8000',
+    hours: 'Priority Contact Centre 24/7',
+    url: 'https://www.sc.com/sg/priority/',
+    description:
+      'Priority Banking desk for SC Invest portfolios, unit trusts, fixed income and multi-currency deposit strategies.',
+  },
+  {
+    id: 'sc-home-loan',
+    bank: 'standard-chartered',
+    name: 'Standard Chartered Mortgage',
+    role: 'Mortgage advisory (callback)',
     specializations: ['home-loan'],
-    email: 'amanda.yeo@sc.com',
-    phone: '+65 6747 7700',
-    bio: "Amanda focuses exclusively on StanChart's SORA-linked home loan packages. She is known for her transparent rate breakdowns and clear explanations of spread adjustments over the loan tenure.",
-    yearsExp: 6,
-    languages: ['English', 'Mandarin'],
-  },
-  {
-    id: 'sc-kenneth-ong',
-    bank: 'standard-chartered',
-    name: 'Kenneth Ong',
-    role: 'Investment & FD Advisor',
-    specializations: ['investments', 'fixed-deposit', 'credit-card'],
-    email: 'kenneth.ong@sc.com',
-    phone: '+65 6747 8800',
-    bio: 'Kenneth advises clients on SC Invest Portfolios, fixed income products, and the SC Journey card benefits programme. He holds the CFP certification and has 8 years in wealth advisory.',
-    yearsExp: 8,
-    languages: ['English', 'Mandarin', 'Cantonese'],
+    phone: '1800 747 7000',
+    phoneOverseas: '+65 6747 7000',
+    url: 'https://www.sc.com/sg/borrow/mortgages/',
+    description:
+      'Enquire about SORA-linked home loan packages and refinancing; request a mortgage specialist callback via the contact page.',
   },
 
   // ── Citibank ───────────────────────────────────────────────────────────────
   {
-    id: 'citi-joanne-teo',
+    id: 'citi-citiphone',
     bank: 'citibank',
-    name: 'Joanne Teo',
-    role: 'Citigold Relationship Manager',
-    specializations: ['general', 'savings', 'investments'],
-    email: 'joanne.teo@citi.com',
-    phone: '+65 6225 5225',
-    bio: 'Joanne manages Citigold and Citi Priority clients, advising on the Citi MaxiGain account and multi-asset investment strategies. She has 10 years in private and premier banking across Singapore and Hong Kong.',
-    yearsExp: 10,
-    languages: ['English', 'Mandarin', 'Cantonese'],
+    name: 'CitiPhone',
+    role: 'General banking hotline',
+    specializations: ['general', 'credit-card', 'savings'],
+    phone: '6225 5225',
+    hours: 'Mon–Fri 8am–8pm',
+    url: 'https://www.citibank.com.sg/static/contact',
+    description:
+      'Main CitiPhone line for Citi accounts, deposits, Citi credit cards and ThankYou Rewards, and general enquiries.',
   },
   {
-    id: 'citi-benjamin-koh',
+    id: 'citi-citigold',
     bank: 'citibank',
-    name: 'Benjamin Koh',
-    role: 'Home Loan Specialist',
+    name: 'Citigold',
+    role: 'Priority & wealth banking',
+    specializations: ['investments', 'general', 'fixed-deposit'],
+    phone: '6323 3200',
+    phoneOverseas: '+65 6323 3200',
+    hours: '24 hours daily',
+    url: 'https://www.citibank.com.sg/wealth-management/citigold/contact-us/',
+    description:
+      'Citigold wealth desk (24/7) for time deposits, investment funds, foreign exchange and multi-asset advisory. Citigold Private Client: +65 6732 2288.',
+  },
+  {
+    id: 'citi-mortgage',
+    bank: 'citibank',
+    name: 'Citi Mortgage Client Care',
+    role: 'Mortgage advisory',
     specializations: ['home-loan'],
-    email: 'benjamin.koh@citi.com',
-    phone: '+65 6225 8899',
-    bio: "Benjamin structures Citi's SORA-linked and fixed-rate home loan packages. He specialises in high-value property financing (≥S$1M) and Citigold client mortgage concessions.",
-    yearsExp: 7,
-    languages: ['English', 'Mandarin'],
-  },
-  {
-    id: 'citi-vivian-chan',
-    bank: 'citibank',
-    name: 'Vivian Chan',
-    role: 'Card Benefits Specialist',
-    specializations: ['credit-card', 'general'],
-    email: 'vivian.chan@citi.com',
-    phone: '+65 6225 6677',
-    bio: "Vivian is the expert on Citi's ThankYou Rewards programme, Citi Rewards card earn rates, and the Citi Prestige lounge access ecosystem. She helps clients maximise their miles and points across the Citi portfolio.",
-    yearsExp: 4,
-    languages: ['English', 'Mandarin', 'Cantonese'],
+    phone: '6238 8838',
+    hours: 'Mon–Fri 9am–5pm',
+    url: 'https://www1.citibank.com.sg/loans/mortgage/request-callback',
+    description:
+      'Mortgage Client Care line for SORA-linked and fixed-rate home loans, including Citigold preferential pricing. Request a callback online.',
   },
 
   // ── HSBC ───────────────────────────────────────────────────────────────────
   {
-    id: 'hsbc-christopher-lim',
+    id: 'hsbc-customer-service',
     bank: 'hsbc',
-    name: 'Christopher Lim',
-    role: 'Premier Relationship Manager',
-    specializations: ['general', 'savings', 'investments'],
-    email: 'christopher.lim@hsbc.com.sg',
-    phone: '+65 6216 9008',
-    bio: "Christopher manages HSBC Premier relationships, advising on the Everyday Global Account, Premier Wealth portfolios, and HSBC's global banking privileges. He has 13 years across HSBC Singapore and Hong Kong.",
-    yearsExp: 13,
-    languages: ['English', 'Mandarin', 'Cantonese'],
+    name: 'HSBC Customer Service',
+    role: 'General banking hotline',
+    specializations: ['general', 'savings', 'credit-card'],
+    phone: '1800 472 2669',
+    phoneOverseas: '+65 6472 2669',
+    hours: '24 hours daily',
+    url: 'https://www.hsbc.com.sg/contact/',
+    description:
+      'Main line (1800-HSBC NOW) for the Everyday Global Account, SGD time deposits, HSBC cards and general enquiries.',
   },
   {
-    id: 'hsbc-grace-tan',
+    id: 'hsbc-premier',
     bank: 'hsbc',
-    name: 'Grace Tan',
-    role: 'Wealth Solutions Manager',
-    specializations: ['fixed-deposit', 'investments'],
-    email: 'grace.tan@hsbc.com.sg',
-    phone: '+65 6216 8899',
-    bio: "Grace advises HSBC clients on structured deposits, fixed income, and unit trust portfolios. She specialises in helping clients transition from HSBC's evolving Everyday+ programme to higher-yield alternatives.",
-    yearsExp: 8,
-    languages: ['English', 'Mandarin'],
+    name: 'HSBC Premier',
+    role: 'Premier & wealth banking',
+    specializations: ['investments', 'general', 'fixed-deposit'],
+    phone: '1800 227 8889',
+    phoneOverseas: '+65 6216 9080',
+    hours: '24 hours daily',
+    url: 'https://www.hsbc.com.sg/premier/existing-customers/',
+    description:
+      'Premier desk for unit trusts, bonds, structured products and wealth advisory. Call +65 6227 8889 for your relationship manager’s contact.',
   },
   {
-    id: 'hsbc-daniel-huang',
+    id: 'hsbc-home-loan',
     bank: 'hsbc',
-    name: 'Daniel Huang',
-    role: 'Property Finance Manager',
+    name: 'HSBC Home Loan Specialists',
+    role: 'Mortgage advisory (callback)',
     specializations: ['home-loan'],
-    email: 'daniel.huang@hsbc.com.sg',
-    phone: '+65 6216 7700',
-    bio: "Daniel specialises in HSBC Premier SmartMortgage packages, including the deposit-offset feature that can significantly reduce effective interest rates for high-balance Premier clients.",
-    yearsExp: 9,
-    languages: ['English', 'Mandarin', 'Teochew'],
+    phone: null,
+    url: 'https://www.hsbc.com.sg/loans/products/home/',
+    description:
+      'Request a callback for SORA-linked and Premier SmartMortgage packages, including the deposit-offset feature for Premier clients.',
   },
 
   // ── Maybank ────────────────────────────────────────────────────────────────
   {
-    id: 'maybank-nurul-ain',
+    id: 'maybank-customer-service',
     bank: 'maybank',
-    name: 'Nurul Ain Binte Ismail',
-    role: 'Relationship Executive',
-    specializations: ['savings', 'general', 'credit-card'],
-    email: 'nurul.ain@maybank2u.com.sg',
-    phone: '+65 6533 5229',
-    bio: "Nurul Ain helps retail customers get the most from Maybank's SaveUp account bonus structure and Family & Friends card cashback programme. She is fluent in both English and Malay, serving Singapore's Malay community.",
-    yearsExp: 4,
-    languages: ['English', 'Malay'],
+    name: 'Maybank Customer Service',
+    role: 'General banking hotline',
+    specializations: ['general', 'savings', 'credit-card'],
+    phone: '1800 629 2265',
+    phoneOverseas: '+65 6533 5229',
+    hours: 'Full service 8am–8pm; emergencies 24/7',
+    url: 'https://www.maybank2u.com.sg/en/personal/about_us/Contact-Us.page',
+    description:
+      'Main line (1800-MAYBANK) for the SaveUp account, fixed/time deposits, Maybank cards and general enquiries.',
   },
   {
-    id: 'maybank-aaron-chong',
+    id: 'maybank-privilege',
     bank: 'maybank',
-    name: 'Aaron Chong',
-    role: 'Fixed Deposit & Savings Specialist',
-    specializations: ['fixed-deposit', 'savings'],
-    email: 'aaron.chong@maybank2u.com.sg',
-    phone: '+65 6533 6688',
-    bio: "Aaron is Maybank's top deposits specialist in Singapore, with deep knowledge of their consistently competitive 6M and 12M fixed deposit promotional rates. He advises on minimum placement thresholds and rollover options.",
-    yearsExp: 6,
-    languages: ['English', 'Mandarin', 'Malay'],
+    name: 'Maybank Privilege',
+    role: 'Priority & wealth banking',
+    specializations: ['investments', 'fixed-deposit', 'general'],
+    phone: '1800 536 9888',
+    phoneOverseas: '+65 6536 9888',
+    email: 'SG.privilege@maybank.com',
+    hours: 'Mon–Fri 9am–6pm',
+    url: 'https://www.maybank2u.com.sg/en/wealth/privilege/contact.html',
+    description:
+      'Priority banking desk for goal-based investments, unit trusts, Etiqa insurance-savings and time-deposit strategies.',
   },
   {
-    id: 'maybank-patricia-goh',
+    id: 'maybank-home-loan',
     bank: 'maybank',
-    name: 'Patricia Goh',
-    role: 'Senior Financial Advisor',
-    specializations: ['investments', 'savings', 'general'],
-    email: 'patricia.goh@maybank2u.com.sg',
-    phone: '+65 6533 7799',
-    bio: "Patricia advises on Maybank Goal-Based Investments and Etiqa insurance-savings products, which also qualify for SaveUp account bonus tiers. She holds the IBF Level 2 certification.",
-    yearsExp: 11,
-    languages: ['English', 'Mandarin', 'Cantonese'],
+    name: 'Maybank Home Loan',
+    role: 'Mortgage advisory',
+    specializations: ['home-loan'],
+    phone: '1800 629 2265',
+    phoneOverseas: '+65 6533 5229',
+    url: 'https://www.maybank2u.com.sg/en/personal/loans/property-loans/index.page',
+    description:
+      'Enquire about HDB and private property home loans (SRFR/FDMR packages), fixed-rate options and refinancing.',
   },
 ];
 

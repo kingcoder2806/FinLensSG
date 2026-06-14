@@ -205,7 +205,8 @@ async function upsert(
   const { error } = await supabaseAdmin.from(table).upsert(stamped, { onConflict });
   if (error) {
     console.error(`[Supabase] upsert ${table} error:`, error.message);
-    return { count: 0, error: error.message };
+    // Surface to the caller (and the /api/check-rates report) instead of failing silently.
+    throw new Error(`upsert ${table} failed: ${error.message} (code ${error.code ?? '?'})`);
   }
   return { count: rows.length, error: null };
 }

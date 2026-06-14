@@ -19,7 +19,7 @@ const NAV_ITEMS = [
   { href: '/', label: 'Home', icon: Layers },
   { href: '/chat', label: 'Ask Fin', icon: Sparkles },
   { href: '/compare', label: 'Compare', icon: BarChart3 },
-  { href: '/banks/dbs', label: 'Banks', icon: Building2 },
+  { href: '/banks', label: 'Banks', icon: Building2 },
   { href: '/contacts', label: 'Advisors', icon: Users },
   { href: '/alerts', label: 'Alerts', icon: Bell, soon: true },
 ];
@@ -38,7 +38,7 @@ export function Header() {
 
   function isActive(href: string) {
     if (href === '/') return pathname === '/';
-    if (href === '/banks/dbs') return pathname.startsWith('/banks');
+    if (href === '/banks') return pathname.startsWith('/banks');
     return pathname.startsWith(href);
   }
 

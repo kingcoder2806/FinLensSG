@@ -22,6 +22,7 @@ import {
 } from '@/constants/sources';
 import { BANK_SLUGS } from '@/constants/banks';
 import { fetchAndStrip, extractRows } from '@/lib/scraper';
+import { renderPage, closeBrowser } from '@/lib/render';
 import {
   insertRateHistory,
   upsertSavingsAccounts,
@@ -60,6 +61,13 @@ export interface RunOptions {
   sourceIds?: string[];
   /** Extract but do not write to the database. */
   dryRun?: boolean;
+  /**
+   * Enable the headless-browser fallback for JS-rendered pages: when a normal
+   * fetch extracts 0 rows, re-render with Chromium and re-extract. Sources flagged
+   * `render: true` (and hard fetch failures like 403) always use the renderer
+   * regardless of this flag. Default false to keep routine runs fast.
+   */
+  render?: boolean;
 }
 
 const BANK_NAME_ALIASES: Record<string, string> = {
@@ -246,21 +254,52 @@ async function persist(
   }
 }
 
+function wantsJson(url: string): boolean {
+  return /\.json|\/api\.|\/api\//i.test(url) || /api\.sgx\.com/i.test(url);
+}
+
 async function processSource(
   source: ScrapeSource,
-  dryRun: boolean,
+  opts: RunOptions,
 ): Promise<SourceReport> {
+  const dryRun = opts.dryRun ?? false;
   const base = { id: source.id, url: source.url, extract: source.extract };
+  const isJson = wantsJson(source.url);
+  let rendered = false;
+
   try {
-    const fetched = await fetchAndStrip(source.url);
+    let fetched = source.render
+      ? await renderPage(source.url, { isJson })
+      : await fetchAndStrip(source.url);
+    rendered = Boolean(source.render);
+
+    // Hard failure (e.g. 403, or render deps missing): try the other path once.
+    if (!fetched.ok || !fetched.text) {
+      const fallback = source.render
+        ? await fetchAndStrip(source.url)
+        : await renderPage(source.url, { isJson });
+      if (fallback.ok && fallback.text) {
+        fetched = fallback;
+        rendered = !source.render; // if we just rendered as the fallback
+      }
+    }
+
     if (!fetched.ok || !fetched.text) {
       return { ...base, ok: false, rowsExtracted: 0, rowsWritten: 0, error: fetched.error ?? 'empty response' };
     }
 
-    const rows = await extractRows(source.extract, fetched.text, {
-      url: source.url,
-      isJson: fetched.isJson,
-    });
+    let rows = await extractRows(source.extract, fetched.text, { url: source.url, isJson: fetched.isJson });
+
+    // Zero-row recovery: a static fetch on a JS page yields nothing — re-render
+    // and re-extract. Gated behind opts.render to keep routine runs fast.
+    if (rows.length === 0 && opts.render && !rendered) {
+      const r = await renderPage(source.url, { isJson });
+      if (r.ok && r.text) {
+        rendered = true;
+        const rerows = await extractRows(source.extract, r.text, { url: source.url, isJson: r.isJson });
+        if (rerows.length > 0) rows = rerows;
+      }
+    }
 
     const rowsWritten = await persist(source, rows as any[], dryRun);
     return { ...base, ok: true, rowsExtracted: rows.length, rowsWritten };
@@ -279,9 +318,14 @@ export async function runRateUpdate(opts: RunOptions = {}): Promise<RunReport> {
   // Run sources concurrently but bounded, to avoid hammering hosts / rate limits.
   const CONCURRENCY = 4;
   const reports: SourceReport[] = [];
-  for (let i = 0; i < sources.length; i += CONCURRENCY) {
-    const batch = sources.slice(i, i + CONCURRENCY);
-    reports.push(...(await Promise.all(batch.map((s) => processSource(s, opts.dryRun ?? false)))));
+  try {
+    for (let i = 0; i < sources.length; i += CONCURRENCY) {
+      const batch = sources.slice(i, i + CONCURRENCY);
+      reports.push(...(await Promise.all(batch.map((s) => processSource(s, opts)))));
+    }
+  } finally {
+    // Release Chromium if the renderer was used during this run.
+    await closeBrowser();
   }
 
   const finishedAt = new Date();

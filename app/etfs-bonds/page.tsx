@@ -4,6 +4,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { ETF_PRODUCTS, SGS_BONDS, CORPORATE_BONDS, BANK_INVESTMENTS } from '@/constants/products';
 import { BANK_MAP } from '@/constants/banks';
+import { BankLogo } from '@/components/banks/BankLogo';
 import { cn } from '@/lib/utils';
 
 function pct(n: number | null) {
@@ -284,7 +285,7 @@ export default function EtfsBondsPage() {
                       >
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <span className="text-base">{bank?.logo}</span>
+                            {bank ? <BankLogo bank={bank} size={18} rounded={4} /> : null}
                             <span className={`text-sm font-medium ${bank?.textClass}`}>
                               {bank?.shortName ?? prod.bank}
                             </span>

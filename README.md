@@ -42,3 +42,27 @@ curl "$APP_URL/api/check-rates?kind=etf&dry=1" -H "Authorization: Bearer $CHECK_
 ```
 
 Automatic runs are configured in `vercel.json` (daily 01:00 / 01:30 UTC, split by phase to stay within serverless time limits). To add or change sources, edit `constants/sources.ts`.
+
+### Headless rendering (JS-rendered / bot-protected pages)
+
+Plain `fetch` only sees raw HTML, so client-rendered rate tables (DBS/OCBC landing pages) come back empty and some aggregators (MoneySmart) return 403. `lib/render.ts` adds a Chromium fallback:
+
+- Sources flagged `render: true` in `constants/sources.ts` (MoneySmart, SGX) always render.
+- Passing `?render=1` (or `--render` on the CLI) also re-renders any source that extracted 0 rows on the normal fetch, then re-extracts — capturing the JS-only bank pages.
+
+Install the browser engine before using it:
+
+```bash
+# Local
+npm i -D playwright && npx playwright install chromium
+npm run update:rates:full          # = --render
+
+# Serverless (Vercel/AWS Lambda) — already in optionalDependencies
+# playwright-core + @sparticuz/chromium are used automatically when present
+```
+
+If the Playwright deps aren't installed, the renderer is skipped gracefully and the scraper falls back to plain fetch. Trigger a full render run over HTTP with:
+
+```bash
+curl "$APP_URL/api/check-rates?phase=extended&render=1" -H "x-check-secret: $CHECK_RATES_SECRET"
+```

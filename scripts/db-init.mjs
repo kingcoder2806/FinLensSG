@@ -7,7 +7,7 @@
  * Reads DATABASE_URL from the environment, falling back to .env.local.
  */
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import pg from 'pg';
@@ -38,8 +38,10 @@ async function main() {
     process.exit(1);
   }
 
-  const sqlPath = join(root, 'supabase', 'migrations', '0001_init.sql');
-  const sql = readFileSync(sqlPath, 'utf8');
+  const migrationsDir = join(root, 'supabase', 'migrations');
+  const files = readdirSync(migrationsDir)
+    .filter((f) => f.endsWith('.sql'))
+    .sort(); // 0001_, 0002_, … apply in lexical order
 
   // Supabase requires SSL; allow self-signed in the pooled connection string.
   const client = new pg.Client({
@@ -49,10 +51,27 @@ async function main() {
 
   console.log('Connecting to database…');
   await client.connect();
-  console.log(`Applying ${sqlPath} …`);
-  await client.query(sql);
+
+  const failures = [];
+  for (const file of files) {
+    const sql = readFileSync(join(migrationsDir, file), 'utf8');
+    process.stdout.write(`Applying ${file} … `);
+    try {
+      await client.query(sql);
+      console.log('✓');
+    } catch (e) {
+      // Don't let one bad/legacy file block the rest — report and continue.
+      console.log('✗', e.message);
+      failures.push(file);
+    }
+  }
   await client.end();
-  console.log('✓ Migration applied. Tables are ready.');
+
+  if (failures.length) {
+    console.log(`\n⚠ Applied ${files.length - failures.length}/${files.length}. Failed: ${failures.join(', ')}`);
+    process.exit(1);
+  }
+  console.log(`✓ ${files.length} migration(s) applied. Tables are ready.`);
 }
 
 main().catch((err) => {

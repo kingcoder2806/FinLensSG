@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Search, Mail, Phone, X, Sparkles, Send, Check,
-  ChevronRight, Users, Copy, ExternalLink, RefreshCw,
+  ChevronRight, Users, Copy, ExternalLink, RefreshCw, Clock, Globe,
 } from 'lucide-react';
 import { BANK_MAP } from '@/constants/banks';
 import type { BankSlug } from '@/constants/banks';
+import { BankLogo } from '@/components/banks/BankLogo';
 import {
   BANK_CONTACTS,
   SPECIALIZATION_LABELS,
@@ -18,7 +20,12 @@ import {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function initials(name: string) {
-  return name.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase();
+  const words = name.replace(/[^A-Za-z ]/g, '').split(' ').filter(Boolean);
+  return (words.slice(0, 2).map((n) => n[0]).join('') || name.slice(0, 2)).toUpperCase();
+}
+
+function telHref(phone: string) {
+  return `tel:${phone.replace(/[^+\d]/g, '')}`;
 }
 
 function SpecBadge({ spec }: { spec: ContactSpecialization }) {
@@ -70,17 +77,7 @@ function ContactCard({
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginTop: 4 }}>
-        <span style={{
-          width: 48, height: 48, borderRadius: 13, flexShrink: 0,
-          background: `color-mix(in oklab, ${bank.color} 20%, var(--surface-2))`,
-          border: `1px solid color-mix(in oklab, ${bank.color} 35%, var(--line))`,
-          display: 'grid', placeItems: 'center',
-          fontFamily: 'var(--font-ibm-mono)', fontWeight: 700, fontSize: 14,
-          color: `color-mix(in oklab, ${bank.color} 75%, var(--ink))`,
-          letterSpacing: '-0.02em',
-        }}>
-          {initials(contact.name)}
-        </span>
+        <BankLogo bank={bank} size={48} rounded={13} />
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 700, fontSize: 15.5, color: 'var(--ink)', lineHeight: 1.2, marginBottom: 4 }}>
@@ -97,7 +94,11 @@ function ContactCard({
               {bank.shortName.slice(0, 2).toUpperCase()}
             </span>
             <span style={{ fontSize: 12, color: 'var(--ink-4)' }}>{bank.shortName}</span>
-            <span style={{ fontSize: 11, color: 'var(--ink-4)' }}>· {contact.yearsExp}yr exp</span>
+            {contact.hours && (
+              <span style={{ fontSize: 11, color: 'var(--ink-4)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                · <Clock size={10} /> {contact.hours}
+              </span>
+            )}
           </div>
         </div>
 
@@ -112,46 +113,56 @@ function ContactCard({
         {contact.specializations.map((s) => <SpecBadge key={s} spec={s} />)}
       </div>
 
-      {/* Languages */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <span style={{ fontSize: 11, color: 'var(--ink-4)' }}>Speaks:</span>
-        <span style={{ fontSize: 11.5, color: 'var(--ink-3)' }}>{contact.languages.join(' · ')}</span>
-      </div>
+      {/* Description */}
+      <p style={{ fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.5, margin: 0,
+        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+        {contact.description}
+      </p>
 
       {/* CTA */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         paddingTop: 10, borderTop: '1px solid var(--line-soft)',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Mail size={12} style={{ color: 'var(--ink-4)' }} />
-          <span style={{ fontSize: 11.5, color: 'var(--ink-4)', fontFamily: 'var(--font-ibm-mono)' }}>
-            {contact.email}
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+          {contact.phone ? (
+            <>
+              <Phone size={12} style={{ color: 'var(--ink-4)', flexShrink: 0 }} />
+              <span style={{ fontSize: 11.5, color: 'var(--ink-4)', fontFamily: 'var(--font-ibm-mono)' }}>
+                {contact.phone}
+              </span>
+            </>
+          ) : (
+            <>
+              <Globe size={12} style={{ color: 'var(--ink-4)', flexShrink: 0 }} />
+              <span style={{ fontSize: 11.5, color: 'var(--ink-4)' }}>Callback / online</span>
+            </>
+          )}
         </div>
         <span style={{
           display: 'inline-flex', alignItems: 'center', gap: 5,
           fontSize: 12.5, fontWeight: 600, color: isSelected ? bank.color : 'var(--gold)',
           transition: 'color .15s',
         }}>
-          <Sparkles size={12} /> Ask {contact.name.split(' ')[0]}
+          {contact.email ? <><Sparkles size={12} /> Draft email</> : <>View contact <ChevronRight size={12} /></>}
         </span>
       </div>
     </div>
   );
 }
 
-// ── Email compose panel ───────────────────────────────────────────────────────
+// ── Contact / email panel ───────────────────────────────────────────────────
 
 type SendState = 'idle' | 'generating' | 'ready' | 'sending' | 'sent' | 'error' | 'no_key';
 
-function EmailPanel({
+function ContactPanel({
   contact, onClose,
 }: {
   contact: BankContact;
   onClose: () => void;
 }) {
   const bank = BANK_MAP[contact.bank];
+  const hasEmail = Boolean(contact.email);
   const [topic, setTopic] = useState('');
   const [userEmail, setUserEmail] = useState('');
   const [userName, setUserName] = useState('');
@@ -161,6 +172,8 @@ function EmailPanel({
   const [composedEmail, setComposedEmail] = useState<{ to: string; subject: string; body: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
+
+  const salutation = `Dear ${contact.name} team`;
 
   useEffect(() => {
     if (bodyRef.current && body) {
@@ -173,9 +186,8 @@ function EmailPanel({
     setState('generating');
     setSubject('');
     setBody('');
-
     try {
-      const res = await fetch('/api/email/generate', {
+      const res = await fetch('/api/email/draft', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -187,9 +199,30 @@ function EmailPanel({
           userEmail: userEmail || undefined,
         }),
       });
-      const data = (await res.json()) as { subject: string; body: string };
-      setSubject(data.subject);
-      setBody(data.body);
+      if (!res.ok || !res.body) throw new Error('stream failed');
+
+      // Read the stream and update subject/body live as Fin writes.
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const nl = buf.indexOf('\n');
+        if (nl === -1) {
+          // Still streaming the SUBJECT line.
+          setSubject(buf.replace(/^subject:\s*/i, '').trim());
+        } else {
+          setSubject(buf.slice(0, nl).replace(/^subject:\s*/i, '').trim());
+          setBody(buf.slice(nl + 1).replace(/^\s+/, ''));
+        }
+      }
+      // Safeguard if the model didn't emit a SUBJECT line.
+      if (buf && buf.indexOf('\n') === -1) {
+        setSubject('Enquiry — FinLens SG');
+        setBody(buf.trim());
+      }
       setState('ready');
     } catch {
       setState('error');
@@ -197,9 +230,8 @@ function EmailPanel({
   }
 
   async function sendEmail() {
-    if (!subject || !body) return;
+    if (!subject || !body || !contact.email) return;
     setState('sending');
-
     try {
       const res = await fetch('/api/email/send', {
         method: 'POST',
@@ -214,15 +246,9 @@ function EmailPanel({
         }),
       });
       const data = (await res.json()) as { sent: boolean; reason?: string; composedEmail?: typeof composedEmail };
-
-      if (data.sent) {
-        setState('sent');
-      } else if (data.reason === 'no_api_key') {
-        setComposedEmail(data.composedEmail ?? null);
-        setState('no_key');
-      } else {
-        setState('error');
-      }
+      if (data.sent) setState('sent');
+      else if (data.reason === 'no_api_key') { setComposedEmail(data.composedEmail ?? null); setState('no_key'); }
+      else setState('error');
     } catch {
       setState('error');
     }
@@ -243,7 +269,7 @@ function EmailPanel({
       borderRadius: 'var(--r-lg)',
       boxShadow: 'var(--shadow-lg)',
       display: 'flex', flexDirection: 'column',
-      overflow: 'hidden', height: '100%',
+      overflow: 'hidden', maxHeight: '86vh', width: '100%',
     }}>
       {/* Panel header */}
       <div style={{
@@ -253,16 +279,7 @@ function EmailPanel({
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{
-              width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-              background: `color-mix(in oklab, ${bank.color} 20%, var(--surface))`,
-              border: `1px solid color-mix(in oklab, ${bank.color} 35%, var(--line))`,
-              display: 'grid', placeItems: 'center',
-              fontFamily: 'var(--font-ibm-mono)', fontWeight: 700, fontSize: 11,
-              color: `color-mix(in oklab, ${bank.color} 70%, var(--ink))`,
-            }}>
-              {initials(contact.name)}
-            </span>
+            <BankLogo bank={bank} size={36} rounded={10} />
             <div>
               <div style={{ fontWeight: 700, fontSize: 14.5, color: 'var(--ink)' }}>{contact.name}</div>
               <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>{contact.role} · {bank.shortName}</div>
@@ -278,34 +295,70 @@ function EmailPanel({
         </div>
 
         {/* Contact meta */}
-        <div style={{ display: 'flex', gap: 16 }}>
-          <a href={`mailto:${contact.email}`} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--ink-4)', textDecoration: 'none' }}>
-            <Mail size={11} /> {contact.email}
-          </a>
-          <a href={`tel:${contact.phone}`} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--ink-4)', textDecoration: 'none' }}>
-            <Phone size={11} /> {contact.phone}
-          </a>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14 }}>
+          {contact.email && (
+            <a href={`mailto:${contact.email}`} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--ink-4)', textDecoration: 'none' }}>
+              <Mail size={11} /> {contact.email}
+            </a>
+          )}
+          {contact.phone && (
+            <a href={telHref(contact.phone)} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--ink-4)', textDecoration: 'none' }}>
+              <Phone size={11} /> {contact.phone}
+            </a>
+          )}
+          {contact.hours && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--ink-4)' }}>
+              <Clock size={11} /> {contact.hours}
+            </span>
+          )}
         </div>
       </div>
 
       {/* Scrollable body */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px 20px 0' }}>
 
-        {/* Contact bio */}
+        {/* About */}
         <div style={{
           background: 'var(--bg-2)', border: '1px solid var(--line-soft)',
-          borderRadius: 10, padding: '13px 15px', marginBottom: 20,
+          borderRadius: 10, padding: '13px 15px', marginBottom: 18,
         }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 6 }}>About</div>
-          <p style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.6 }}>{contact.bio}</p>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--ink-4)', marginBottom: 6 }}>What this desk handles</div>
+          <p style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.6 }}>{contact.description}</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 10 }}>
             {contact.specializations.map((s) => <SpecBadge key={s} spec={s} />)}
           </div>
         </div>
 
-        {/* Email compose form */}
-        {(state === 'idle' || state === 'generating' || state === 'ready' || state === 'error') && (
+        {/* Quick actions — always available */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: hasEmail ? 20 : 4 }}>
+          {contact.phone && (
+            <a href={telHref(contact.phone)} className="btn btn-ghost btn-sm" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, textDecoration: 'none' }}>
+              <Phone size={14} /> Call {contact.phone}
+              {contact.phoneOverseas && <span style={{ color: 'var(--ink-4)', fontSize: 11 }}>· {contact.phoneOverseas} overseas</span>}
+            </a>
+          )}
+          <a href={contact.url} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, textDecoration: 'none' }}>
+            <ExternalLink size={14} /> {contact.phone ? 'Official contact page' : 'Request a callback'}
+          </a>
+        </div>
+
+        {/* Email compose — only for desks with a published email */}
+        {!hasEmail && (
+          <div style={{
+            background: 'var(--surface-2)', border: '1px solid var(--line-soft)',
+            borderRadius: 10, padding: '13px 15px', marginTop: 16, marginBottom: 20,
+          }}>
+            <div style={{ fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.5 }}>
+              This desk takes enquiries by phone or the bank’s online callback form — it doesn’t publish a public email address. Use the buttons above to reach them.
+            </div>
+          </div>
+        )}
+
+        {hasEmail && (state === 'idle' || state === 'generating' || state === 'ready' || state === 'error') && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--ink-4)' }}>
+              Or let Fin draft an email
+            </div>
             <div>
               <label style={{ display: 'block', fontSize: 11.5, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 Your name
@@ -314,12 +367,7 @@ function EmailPanel({
                 value={userName}
                 onChange={(e) => setUserName(e.target.value)}
                 placeholder="e.g. Alex Tan"
-                style={{
-                  width: '100%', padding: '10px 12px', borderRadius: 9,
-                  background: 'var(--bg-2)', border: '1px solid var(--line)',
-                  color: 'var(--ink)', fontSize: 13.5, fontFamily: 'inherit',
-                  outline: 'none',
-                }}
+                style={{ width: '100%', padding: '10px 12px', borderRadius: 9, background: 'var(--bg-2)', border: '1px solid var(--line)', color: 'var(--ink)', fontSize: 13.5, fontFamily: 'inherit', outline: 'none' }}
               />
             </div>
 
@@ -332,30 +380,20 @@ function EmailPanel({
                 onChange={(e) => setUserEmail(e.target.value)}
                 placeholder="you@example.com"
                 type="email"
-                style={{
-                  width: '100%', padding: '10px 12px', borderRadius: 9,
-                  background: 'var(--bg-2)', border: '1px solid var(--line)',
-                  color: 'var(--ink)', fontSize: 13.5, fontFamily: 'inherit',
-                  outline: 'none',
-                }}
+                style={{ width: '100%', padding: '10px 12px', borderRadius: 9, background: 'var(--bg-2)', border: '1px solid var(--line)', color: 'var(--ink)', fontSize: 13.5, fontFamily: 'inherit', outline: 'none' }}
               />
             </div>
 
             <div>
               <label style={{ display: 'block', fontSize: 11.5, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                What do you want to ask? <span style={{ color: 'var(--ink-4)', textTransform: 'none', fontWeight: 400 }}>(optional — Fin will fill in the rest)</span>
+                What do you want to ask? <span style={{ color: 'var(--ink-4)', textTransform: 'none', fontWeight: 400 }}>(optional — Fin fills in the rest)</span>
               </label>
               <textarea
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
-                placeholder={`e.g. "I have S$50k to place in a 12-month FD and want to know if ${contact.name.split(' ')[0]} can match the current promotional rate"`}
+                placeholder={`e.g. "I have S$50k for a 12-month fixed deposit — what's your current promotional rate and minimum placement?"`}
                 rows={3}
-                style={{
-                  width: '100%', padding: '10px 12px', borderRadius: 9,
-                  background: 'var(--bg-2)', border: '1px solid var(--line)',
-                  color: 'var(--ink)', fontSize: 13.5, fontFamily: 'inherit',
-                  outline: 'none', resize: 'vertical', lineHeight: 1.5,
-                }}
+                style={{ width: '100%', padding: '10px 12px', borderRadius: 9, background: 'var(--bg-2)', border: '1px solid var(--line)', color: 'var(--ink)', fontSize: 13.5, fontFamily: 'inherit', outline: 'none', resize: 'vertical', lineHeight: 1.5 }}
               />
             </div>
 
@@ -387,11 +425,19 @@ function EmailPanel({
               </p>
             )}
 
-            {/* Generated email preview */}
-            {(state === 'ready') && (
+            {(state === 'ready' || (state === 'generating' && (!!subject || !!body))) && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 4 }}>
                 <div style={{ height: 1, background: 'var(--line-soft)' }} />
-
+                {state === 'generating' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--gold)' }}>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      {[0, 1, 2].map((i) => (
+                        <span key={i} style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--gold)', animation: `blink 1s ${i * 0.18}s infinite` }} />
+                      ))}
+                    </div>
+                    Fin is writing your email in real time…
+                  </div>
+                )}
                 <div>
                   <label style={{ display: 'block', fontSize: 11.5, fontWeight: 600, color: 'var(--ink-3)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                     Subject
@@ -399,11 +445,7 @@ function EmailPanel({
                   <input
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
-                    style={{
-                      width: '100%', padding: '10px 12px', borderRadius: 9,
-                      background: 'var(--bg-2)', border: '1px solid var(--line)',
-                      color: 'var(--ink)', fontSize: 13.5, fontFamily: 'inherit', outline: 'none',
-                    }}
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: 9, background: 'var(--bg-2)', border: '1px solid var(--line)', color: 'var(--ink)', fontSize: 13.5, fontFamily: 'inherit', outline: 'none' }}
                   />
                 </div>
 
@@ -415,35 +457,16 @@ function EmailPanel({
                     <span style={{ fontSize: 11, color: 'var(--ink-4)' }}>Greeting & sign-off added automatically</span>
                   </div>
                   <div style={{ position: 'relative' }}>
-                    <div style={{
-                      padding: '10px 12px 8px', borderRadius: '9px 9px 0 0',
-                      background: 'var(--surface-2)', border: '1px solid var(--line)',
-                      borderBottom: 'none', fontSize: 12, color: 'var(--ink-4)',
-                      fontFamily: 'var(--font-ibm-mono)',
-                    }}>
-                      Dear {contact.name.split(' ')[0]},
+                    <div style={{ padding: '10px 12px 8px', borderRadius: '9px 9px 0 0', background: 'var(--surface-2)', border: '1px solid var(--line)', borderBottom: 'none', fontSize: 12, color: 'var(--ink-4)', fontFamily: 'var(--font-ibm-mono)' }}>
+                      {salutation},
                     </div>
                     <textarea
                       ref={bodyRef}
                       value={body}
                       onChange={(e) => setBody(e.target.value)}
-                      style={{
-                        width: '100%', padding: '12px 12px',
-                        borderRadius: '0 0 9px 9px',
-                        background: 'var(--bg-2)', border: '1px solid var(--line)',
-                        borderTop: 'none',
-                        color: 'var(--ink)', fontSize: 13.5, fontFamily: 'inherit',
-                        outline: 'none', resize: 'none', lineHeight: 1.6,
-                        minHeight: 120,
-                        overflow: 'hidden',
-                      }}
+                      style={{ width: '100%', padding: '12px 12px', borderRadius: '0 0 9px 9px', background: 'var(--bg-2)', border: '1px solid var(--line)', borderTop: 'none', color: 'var(--ink)', fontSize: 13.5, fontFamily: 'inherit', outline: 'none', resize: 'none', lineHeight: 1.6, minHeight: 120, overflow: 'hidden' }}
                     />
-                    <div style={{
-                      padding: '8px 12px 10px', borderRadius: '0 0 9px 9px',
-                      background: 'var(--surface-2)', border: '1px solid var(--line)',
-                      borderTop: 'none', fontSize: 12, color: 'var(--ink-4)',
-                      fontFamily: 'var(--font-ibm-mono)',
-                    }}>
+                    <div style={{ padding: '8px 12px 10px', borderRadius: '0 0 9px 9px', background: 'var(--surface-2)', border: '1px solid var(--line)', borderTop: 'none', fontSize: 12, color: 'var(--ink-4)', fontFamily: 'var(--font-ibm-mono)' }}>
                       Best regards, {userName || '[Your Name]'}
                     </div>
                   </div>
@@ -456,18 +479,14 @@ function EmailPanel({
         {/* Sent confirmation */}
         {state === 'sent' && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: '40px 0', textAlign: 'center' }}>
-            <span style={{
-              width: 56, height: 56, borderRadius: '50%',
-              background: 'var(--up-soft)', border: '2px solid var(--up)',
-              display: 'grid', placeItems: 'center',
-            }}>
+            <span style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--up-soft)', border: '2px solid var(--up)', display: 'grid', placeItems: 'center' }}>
               <Check size={24} style={{ color: 'var(--up)' }} strokeWidth={2.5} />
             </span>
             <div>
               <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--ink)', marginBottom: 6 }}>Email sent!</div>
               <div style={{ fontSize: 13.5, color: 'var(--ink-3)', lineHeight: 1.5 }}>
-                Your email has been sent to {contact.name}.<br />
-                Expect a reply within 1–2 business days.
+                Your enquiry has been sent to {contact.name}.<br />
+                Replies typically arrive within 1–2 business days.
               </div>
             </div>
             <button onClick={() => { setState('idle'); setSubject(''); setBody(''); setTopic(''); }} className="btn btn-ghost btn-sm">
@@ -479,15 +498,12 @@ function EmailPanel({
         {/* No API key — show composed email for manual send */}
         {state === 'no_key' && composedEmail && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{
-              background: 'var(--gold-soft)', border: '1px solid var(--gold-line)',
-              borderRadius: 10, padding: '13px 15px',
-            }}>
+            <div style={{ background: 'var(--gold-soft)', border: '1px solid var(--gold-line)', borderRadius: 10, padding: '13px 15px' }}>
               <div style={{ fontSize: 12.5, color: 'var(--gold)', fontWeight: 600, marginBottom: 4 }}>
                 Email sending not configured
               </div>
               <div style={{ fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.5 }}>
-                Add <code style={{ fontFamily: 'var(--font-ibm-mono)', background: 'var(--surface-2)', padding: '1px 5px', borderRadius: 4 }}>RESEND_API_KEY</code> to your environment to enable automatic sending. For now, copy the email below and send manually.
+                Add <code style={{ fontFamily: 'var(--font-ibm-mono)', background: 'var(--surface-2)', padding: '1px 5px', borderRadius: 4 }}>RESEND_API_KEY</code> to enable automatic sending. For now, copy the email below and send manually.
               </div>
             </div>
 
@@ -512,7 +528,7 @@ function EmailPanel({
       </div>
 
       {/* Send button footer */}
-      {state === 'ready' && (
+      {hasEmail && state === 'ready' && (
         <div style={{ padding: '14px 20px 18px', borderTop: '1px solid var(--line-soft)', flexShrink: 0 }}>
           <button
             onClick={sendEmail}
@@ -520,7 +536,7 @@ function EmailPanel({
             className="btn btn-gold"
             style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
           >
-            <Send size={15} /> Send to {contact.name.split(' ')[0]}
+            <Send size={15} /> Send to {contact.name}
           </button>
         </div>
       )}
@@ -552,6 +568,19 @@ export default function ContactsPage() {
   const [specFilter, setSpecFilter] = useState<typeof ALL_SPECS[number]>('all');
   const [selected, setSelected] = useState<BankContact | null>(null);
 
+  // Close the pop-up on Escape and lock background scroll while it's open.
+  useEffect(() => {
+    if (!selected) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setSelected(null); };
+    document.addEventListener('keydown', onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [selected]);
+
   const filtered = useMemo(() => {
     return BANK_CONTACTS.filter((c) => {
       const matchBank = bankFilter === 'all' || c.bank === bankFilter;
@@ -562,7 +591,7 @@ export default function ContactsPage() {
         || c.role.toLowerCase().includes(q)
         || BANK_MAP[c.bank].shortName.toLowerCase().includes(q)
         || c.specializations.some((s) => SPECIALIZATION_LABELS[s].toLowerCase().includes(q))
-        || c.bio.toLowerCase().includes(q);
+        || c.description.toLowerCase().includes(q);
       return matchBank && matchSpec && matchQuery;
     });
   }, [query, bankFilter, specFilter]);
@@ -573,41 +602,33 @@ export default function ContactsPage() {
 
         {/* Page header */}
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 32 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 560 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 580 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span className="eyebrow eyebrow-gold">Bank advisors</span>
+              <span className="eyebrow eyebrow-gold">Bank contacts</span>
             </div>
             <h1 style={{ fontFamily: 'var(--font-newsreader)', fontSize: 'clamp(26px, 3.4vw, 38px)', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.08 }}>
-              Find an expert, send them a question
+              Reach the right desk at every bank
             </h1>
             <p style={{ color: 'var(--ink-3)', fontSize: 16, lineHeight: 1.5 }}>
-              Select an advisor, describe what you want to ask — Fin writes the email. You review it and send it in one click.
+              Real, official contact points — customer-service hotlines, priority &amp; wealth desks, and mortgage lines. Call directly, or let Fin draft an email where the bank publishes one.
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span className="pill" style={{ fontSize: 12 }}>
               <Users size={12} />
-              {BANK_CONTACTS.length} advisors across 7 banks
+              {BANK_CONTACTS.length} contact points across 7 banks
             </span>
           </div>
         </div>
 
         {/* Search bar */}
-        <div style={{
-          position: 'relative', marginBottom: 18,
-          background: 'var(--surface)', border: '1px solid var(--line)',
-          borderRadius: 13, display: 'flex', alignItems: 'center',
-          padding: '10px 16px', gap: 12,
-        }}>
+        <div style={{ position: 'relative', marginBottom: 18, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 13, display: 'flex', alignItems: 'center', padding: '10px 16px', gap: 12 }}>
           <Search size={16} style={{ color: 'var(--ink-4)', flexShrink: 0 }} />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by name, role, bank, or specialisation…"
-            style={{
-              flex: 1, background: 'transparent', border: 'none', outline: 'none',
-              color: 'var(--ink)', fontSize: 15, fontFamily: 'inherit',
-            }}
+            placeholder="Search by bank, desk, or topic…"
+            style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'var(--ink)', fontSize: 15, fontFamily: 'inherit' }}
           />
           {query && (
             <button onClick={() => setQuery('')} style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--ink-4)', display: 'grid', placeItems: 'center' }}>
@@ -618,7 +639,6 @@ export default function ContactsPage() {
 
         {/* Filters */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
-          {/* Bank filter */}
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {ALL_BANKS.map((b) => {
               const active = bankFilter === b;
@@ -641,7 +661,6 @@ export default function ContactsPage() {
             })}
           </div>
           <div style={{ width: 1, background: 'var(--line-soft)', margin: '0 4px', alignSelf: 'stretch' }} />
-          {/* Spec filter */}
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {ALL_SPECS.map((s) => {
               const active = specFilter === s;
@@ -667,7 +686,7 @@ export default function ContactsPage() {
 
         {/* Results count */}
         <div style={{ fontSize: 13, color: 'var(--ink-4)', marginBottom: 18 }}>
-          {filtered.length} advisor{filtered.length !== 1 ? 's' : ''} found
+          {filtered.length} contact{filtered.length !== 1 ? 's' : ''} found
           {(bankFilter !== 'all' || specFilter !== 'all' || query) && (
             <button
               onClick={() => { setQuery(''); setBankFilter('all'); setSpecFilter('all'); }}
@@ -678,15 +697,12 @@ export default function ContactsPage() {
           )}
         </div>
 
-        {/* Main layout: grid + email panel */}
-        <div style={{ display: 'grid', gridTemplateColumns: selected ? '1fr 420px' : '1fr', gap: 24 }} className="contacts-layout">
-
-          {/* Contact grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: selected ? '1fr' : 'repeat(3, 1fr)', gap: 16 }} className="contacts-grid">
+        {/* Contact grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }} className="contacts-grid">
             {filtered.length === 0 ? (
               <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '60px 0', color: 'var(--ink-4)' }}>
                 <Users size={32} style={{ margin: '0 auto 14px', opacity: 0.4 }} />
-                <div style={{ fontSize: 15, marginBottom: 6 }}>No advisors match your search</div>
+                <div style={{ fontSize: 15, marginBottom: 6 }}>No contacts match your search</div>
                 <div style={{ fontSize: 13 }}>Try adjusting your filters or search terms</div>
               </div>
             ) : (
@@ -699,24 +715,41 @@ export default function ContactsPage() {
                 />
               ))
             )}
-          </div>
-
-          {/* Email compose panel */}
-          {selected && (
-            <div style={{ position: 'sticky', top: 90, height: 'calc(100vh - 160px)', minHeight: 580 }}>
-              <EmailPanel
-                key={selected.id}
-                contact={selected}
-                onClose={() => setSelected(null)}
-              />
-            </div>
-          )}
         </div>
+
       </div>
 
+      {/* Pop-up modal — portaled to <body> so it centers on the viewport,
+          escaping the page wrapper's transform/animation. */}
+      {selected && typeof document !== 'undefined' && createPortal(
+        <div
+          onClick={() => setSelected(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 200,
+            background: 'color-mix(in oklab, var(--bg) 50%, rgba(0,0,0,0.65))',
+            backdropFilter: 'blur(5px)',
+            display: 'grid', placeItems: 'center', padding: 20,
+            animation: 'fadeIn .15s ease',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: 'min(480px, 100%)', display: 'flex', animation: 'popIn .18s ease' }}
+          >
+            <ContactPanel
+              key={selected.id}
+              contact={selected}
+              onClose={() => setSelected(null)}
+            />
+          </div>
+        </div>,
+        document.body,
+      )}
+
       <style>{`
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes popIn { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
         @media (max-width: 1100px) {
-          .contacts-layout { grid-template-columns: 1fr !important; }
           .contacts-grid { grid-template-columns: repeat(2, 1fr) !important; }
         }
         @media (max-width: 700px) {

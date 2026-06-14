@@ -262,12 +262,14 @@ interface RunParams {
   phase: Phase;
   only?: ExtractKind[];
   sourceIds?: string[];
+  render?: boolean;
 }
 
 async function readParams(req: Request): Promise<RunParams> {
   const params = new URL(req.url).searchParams;
   let dryRun = params.get('dry') === '1' || params.get('dryRun') === 'true';
   let phase = (params.get('phase') as Phase) || 'all';
+  let render = params.get('render') === '1' || params.get('render') === 'true';
   let only: ExtractKind[] | undefined;
   let sourceIds: string[] | undefined;
 
@@ -287,11 +289,12 @@ async function readParams(req: Request): Promise<RunParams> {
     const body = await req.json().catch(() => ({} as any));
     if (body.dryRun === true) dryRun = true;
     if (body.phase) phase = body.phase as Phase;
+    if (body.render === true) render = true;
     if (Array.isArray(body.only)) only = body.only as ExtractKind[];
     if (Array.isArray(body.sourceIds)) sourceIds = body.sourceIds as string[];
   }
   if (!['fd', 'extended', 'all'].includes(phase)) phase = 'all';
-  return { dryRun, phase, only, sourceIds };
+  return { dryRun, phase, only, sourceIds, render };
 }
 
 async function handle(req: Request) {
@@ -305,9 +308,9 @@ async function handle(req: Request) {
     );
   }
 
-  const { dryRun, phase, only, sourceIds } = await readParams(req);
+  const { dryRun, phase, only, sourceIds, render } = await readParams(req);
   const targeted = Boolean(only || sourceIds);
-  console.log('[check-rates] run', { phase, dryRun, only, sourceIds });
+  console.log('[check-rates] run', { phase, dryRun, render, only, sourceIds });
 
   const response: Record<string, unknown> = {
     checkedAt: new Date().toISOString(),
@@ -337,6 +340,7 @@ async function handle(req: Request) {
           only: extendedOnly.length ? extendedOnly : undefined,
           sourceIds,
           dryRun,
+          render,
         });
       }
     }

@@ -14,7 +14,8 @@
     "db:seed": "node scripts/seed.mjs",
     "db:init": "node scripts/db-init.mjs",
     "update:rates": "tsx scripts/update-rates.ts",
-    "update:rates:dry": "tsx scripts/update-rates.ts --dry"
+    "update:rates:dry": "tsx scripts/update-rates.ts --dry",
+    "update:rates:full": "tsx scripts/update-rates.ts --render"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.0.0",
@@ -56,10 +57,16 @@
     "eslint": "^8",
     "eslint-config-next": "14.2.5",
     "pg": "^8.21.0",
+    "playwright": "^1.60.0",
     "postcss": "^8",
     "prisma": "^5.19.0",
     "tailwindcss": "^3.4.10",
     "tsx": "^4.19.0",
     "typescript": "^5"
+  },
+  "optionalDependencies": {
+    "@sparticuz/chromium": "^131.0.0",
+    "playwright": "^1.48.0",
+    "playwright-core": "^1.48.0"
   }
 }

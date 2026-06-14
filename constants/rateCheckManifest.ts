@@ -62,7 +62,7 @@ export const RATE_CHECK_MANIFEST: BankCheckEntry[] = [
   {
     bankSlug: 'standard-chartered',
     bankName: 'Standard Chartered',
-    sourceUrl: 'https://www.sc.com/sg/save/time-deposits/sgd-time-deposit/',
+    sourceUrl: 'https://www.sc.com/sg/save/time-deposits/singapore-dollar-time-deposit/',
     tenors: [
       { months: 1,  boardRate: 0.05, promoRate: null, minDepositBoard: 5000,  minDepositPromo: null },
       { months: 3,  boardRate: 0.10, promoRate: null, minDepositBoard: 5000,  minDepositPromo: null },
