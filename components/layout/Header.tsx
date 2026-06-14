@@ -13,15 +13,18 @@ import {
   Menu,
   X,
   Users,
+  type LucideIcon,
 } from 'lucide-react';
 
-const NAV_ITEMS = [
+type NavItem = { href: string; label: string; icon: LucideIcon; soon?: boolean };
+
+const NAV_ITEMS: NavItem[] = [
   { href: '/', label: 'Home', icon: Layers },
   { href: '/chat', label: 'Ask Fin', icon: Sparkles },
   { href: '/compare', label: 'Compare', icon: BarChart3 },
   { href: '/banks', label: 'Banks', icon: Building2 },
   { href: '/contacts', label: 'Advisors', icon: Users },
-  { href: '/alerts', label: 'Alerts', icon: Bell, soon: true },
+  { href: '/alerts', label: 'Alerts', icon: Bell },
 ];
 
 export function Header() {

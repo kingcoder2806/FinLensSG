@@ -34,8 +34,23 @@ export interface AlertRow {
   product_category: string | null;
   target_rate: number | null;
   direction: 'above' | 'below';
+  tenor_months: number | null;
+  label: string | null;
+  last_triggered_at: string | null;
+  last_value: number | null;
   active: boolean;
   created_at: string;
+}
+
+export interface AlertInsert {
+  email: string;
+  bank_slug?: string | null;
+  product_category?: string | null;
+  target_rate?: number | null;
+  direction: 'above' | 'below';
+  tenor_months?: number | null;
+  label?: string | null;
+  active?: boolean;
 }
 
 export async function insertRateHistory(rows: Omit<RateHistoryRow, 'id' | 'recorded_at'>[]) {
@@ -43,7 +58,7 @@ export async function insertRateHistory(rows: Omit<RateHistoryRow, 'id' | 'recor
   if (error) console.error('[Supabase] insert rate history error:', error);
 }
 
-export async function createAlert(alert: Omit<AlertRow, 'id' | 'created_at'>) {
+export async function createAlert(alert: AlertInsert) {
   const { data, error } = await supabaseAdmin.from('alerts').insert(alert).select().single();
   if (error) throw error;
   return data as AlertRow;
@@ -56,6 +71,42 @@ export async function getActiveAlerts(): Promise<AlertRow[]> {
     .eq('active', true);
   if (error) return [];
   return (data as AlertRow[]) ?? [];
+}
+
+export async function listAlertsByEmail(email: string): Promise<AlertRow[]> {
+  const { data, error } = await supabaseAdmin
+    .from('alerts')
+    .select('*')
+    .eq('email', email.toLowerCase().trim())
+    .order('created_at', { ascending: false });
+  if (error) return [];
+  return (data as AlertRow[]) ?? [];
+}
+
+export async function deleteAlert(id: string, email: string): Promise<boolean> {
+  const { error } = await supabaseAdmin
+    .from('alerts')
+    .delete()
+    .eq('id', id)
+    .eq('email', email.toLowerCase().trim());
+  return !error;
+}
+
+export async function setAlertActive(id: string, email: string, active: boolean): Promise<boolean> {
+  const { error } = await supabaseAdmin
+    .from('alerts')
+    .update({ active })
+    .eq('id', id)
+    .eq('email', email.toLowerCase().trim());
+  return !error;
+}
+
+export async function markAlertTriggered(id: string, value: number): Promise<void> {
+  const { error } = await supabaseAdmin
+    .from('alerts')
+    .update({ last_triggered_at: new Date().toISOString(), last_value: value })
+    .eq('id', id);
+  if (error) console.error('[Supabase] markAlertTriggered error:', error.message);
 }
 
 // ── New product table types ────────────────────────────────────────────────

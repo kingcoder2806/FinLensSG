@@ -345,6 +345,16 @@ async function handle(req: Request) {
       }
     }
 
+    // After fresh rates are written, evaluate user alerts (skip on dry runs).
+    if (!dryRun && (phase === 'all' || phase === 'extended' || phase === 'fd')) {
+      try {
+        const { checkAlerts } = await import('@/lib/alerts');
+        response.alerts = await checkAlerts();
+      } catch (e) {
+        console.error('[check-rates] alert check failed:', e);
+      }
+    }
+
     return NextResponse.json(response);
   } catch (err) {
     console.error('[check-rates] run failed:', err);
