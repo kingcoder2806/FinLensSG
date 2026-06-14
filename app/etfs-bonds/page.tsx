@@ -2,9 +2,10 @@
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { ETF_PRODUCTS, SGS_BONDS, CORPORATE_BONDS, BANK_INVESTMENTS } from '@/constants/products';
+import { BANK_INVESTMENTS } from '@/constants/products';
 import { BANK_MAP } from '@/constants/banks';
 import { BankLogo } from '@/components/banks/BankLogo';
+import { useLiveData } from '@/lib/useLiveData';
 import { cn } from '@/lib/utils';
 
 function pct(n: number | null) {
@@ -17,6 +18,7 @@ function sgd(n: number | null) {
 }
 
 export default function EtfsBondsPage() {
+  const { etfs: ETF_PRODUCTS, sgsBonds: SGS_BONDS, corporateBonds: CORPORATE_BONDS } = useLiveData();
   const maxEtfYtd = Math.max(...ETF_PRODUCTS.map((e) => e.ytd ?? -Infinity));
   const maxCorpYtm = Math.max(...CORPORATE_BONDS.map((b) => b.ytm));
 

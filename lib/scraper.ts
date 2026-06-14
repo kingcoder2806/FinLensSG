@@ -227,7 +227,9 @@ export async function extractRows<K extends ExtractKind>(
   pageText: string,
   context: { url: string; isJson?: boolean },
 ): Promise<ExtractedRows<K>> {
-  const schema = SCHEMAS[kind];
+  // Widen the per-kind union to a single schema type so generateObject's typed
+  // overload matches (otherwise TS falls back to the 'no-schema' overload).
+  const schema = SCHEMAS[kind] as z.ZodTypeAny;
 
   const { object } = await generateObject({
     model: anthropic(MODEL),

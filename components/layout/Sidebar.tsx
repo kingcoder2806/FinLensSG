@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { SEED_RATES } from '@/constants/products';
 import { BANK_MAP } from '@/constants/banks';
 import { formatRate } from '@/lib/utils';
+import { useLiveData } from '@/lib/useLiveData';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
@@ -28,7 +28,8 @@ function RateTick({ bank, rate, label }: { bank: string; rate: number; label: st
 }
 
 export function Sidebar() {
-  const fd12m = [...(SEED_RATES.fixedDeposit[12] ?? [])]
+  const { fdRates, meta } = useLiveData();
+  const fd12m = [...(fdRates[12] ?? [])]
     .sort((a, b) => b.rate - a.rate)
     .slice(0, 5);
 
@@ -41,7 +42,7 @@ export function Sidebar() {
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Reference Rates
               </p>
-              <Badge variant="outline" className="text-[10px] py-0">Reference</Badge>
+              <Badge variant="outline" className="text-[10px] py-0">{meta.source === 'seed' ? 'Reference' : 'Live'}</Badge>
             </div>
             <p className="text-[11px] font-mono uppercase text-brand-purple tracking-widest mb-1">
               Fixed Deposit 12m

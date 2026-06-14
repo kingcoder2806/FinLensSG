@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { BankFilter } from '@/components/banks/BankFilter';
-import { SAVINGS_ACCOUNTS } from '@/constants/products';
+import { useLiveData } from '@/lib/useLiveData';
 import { BANK_MAP } from '@/constants/banks';
 import { BankLogo } from '@/components/banks/BankLogo';
 import { cn } from '@/lib/utils';
@@ -10,11 +10,12 @@ import type { BankSlug } from '@/constants/banks';
 
 export default function SavingsPage() {
   const [selectedBanks, setSelectedBanks] = useState<BankSlug[] | 'all'>('all');
+  const { savings } = useLiveData();
 
   const visible =
     selectedBanks === 'all'
-      ? SAVINGS_ACCOUNTS
-      : SAVINGS_ACCOUNTS.filter((a) => (selectedBanks as BankSlug[]).includes(a.bank));
+      ? savings
+      : savings.filter((a) => (selectedBanks as BankSlug[]).includes(a.bank));
 
   const maxRate = Math.max(...visible.map((a) => a.maxRate));
 

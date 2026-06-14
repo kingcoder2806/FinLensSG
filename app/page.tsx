@@ -12,8 +12,8 @@ import {
   Crosshair,
   ChevronRight,
 } from 'lucide-react';
-import { SEED_RATES } from '@/constants/products';
 import { BANKS } from '@/constants/banks';
+import { useLiveData } from '@/lib/useLiveData';
 
 /* ---- FinPreview animated card ---- */
 function FinPreview() {
@@ -434,7 +434,8 @@ function Footer() {
    Home page
    ============================================================ */
 export default function HomePage() {
-  const fd12rates = SEED_RATES.fixedDeposit[12];
+  const { fdRates } = useLiveData();
+  const fd12rates = fdRates[12];
 
   const categories = [
     {

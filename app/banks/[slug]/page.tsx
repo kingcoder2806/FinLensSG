@@ -11,16 +11,28 @@ export function generateStaticParams() {
   return BANKS.map((bank) => ({ slug: bank.slug }));
 }
 
-export default function BankPage({ params }: { params: { slug: BankSlug } }) {
+// Prerender at build, then refresh from the live DB at most every 5 minutes (ISR).
+export const revalidate = 300;
+
+export default async function BankPage({ params }: { params: { slug: BankSlug } }) {
   const bank = BANK_MAP[params.slug];
   if (!bank) notFound();
 
+  // Read live FD rates server-side; fall back to seed if Supabase is unavailable.
+  let fd = SEED_RATES.fixedDeposit;
+  try {
+    const { getLiveFdRates } = await import('@/lib/live-data');
+    fd = await getLiveFdRates();
+  } catch {
+    /* keep seed */
+  }
+
   const fdRow = {
     bank: bank.slug,
-    fd3m: SEED_RATES.fixedDeposit[3].find((item) => item.bank === bank.slug)?.rate,
-    fd6m: SEED_RATES.fixedDeposit[6].find((item) => item.bank === bank.slug)?.rate,
-    fd12m: SEED_RATES.fixedDeposit[12].find((item) => item.bank === bank.slug)?.rate,
-    fd24m: SEED_RATES.fixedDeposit[24].find((item) => item.bank === bank.slug)?.rate,
+    fd3m: fd[3].find((item) => item.bank === bank.slug)?.rate,
+    fd6m: fd[6].find((item) => item.bank === bank.slug)?.rate,
+    fd12m: fd[12].find((item) => item.bank === bank.slug)?.rate,
+    fd24m: fd[24].find((item) => item.bank === bank.slug)?.rate,
   };
 
   return (

@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import {
   SAVINGS_ACCOUNTS,
-  SEED_RATES,
   FD_BANK_META,
   HOME_LOANS,
   CREDIT_CARDS,
@@ -19,6 +18,7 @@ import { BANK_MAP } from '@/constants/banks';
 import type { BankSlug } from '@/constants/banks';
 import Link from 'next/link';
 import { ComparisonPanel, type SelectableItem } from '@/components/compare/ComparisonPanel';
+import { useLiveData } from '@/lib/useLiveData';
 
 // ── Sort hook ─────────────────────────────────────────────────────────────────
 
@@ -290,7 +290,8 @@ function SavingsTable({ selectedIds, onToggle }: {
   selectedIds: Set<string>;
   onToggle: (item: SelectableItem) => void;
 }) {
-  const rows = SAVINGS_ACCOUNTS.map((s) => ({ ...s, _best: s.maxRate, _item: savingsToItem(s) }));
+  const { savings } = useLiveData();
+  const rows = savings.map((s) => ({ ...s, _best: s.maxRate, _item: savingsToItem(s) }));
   const sort = useSort(rows as unknown as Record<string, unknown>[], '_best');
   const best = Math.max(...rows.map((r) => r.maxRate));
 
@@ -345,12 +346,13 @@ function FDTable({ selectedIds, onToggle }: {
   onToggle: (item: SelectableItem) => void;
 }) {
   const [minFilter, setMinFilter] = useState(0);
+  const { fdRates } = useLiveData();
 
   const allRows = FD_BANK_META.map((meta) => {
-    const r3  = SEED_RATES.fixedDeposit[3].find((r) => r.bank === meta.bank)?.rate ?? 0;
-    const r6  = SEED_RATES.fixedDeposit[6].find((r) => r.bank === meta.bank)?.rate ?? 0;
-    const r12 = SEED_RATES.fixedDeposit[12].find((r) => r.bank === meta.bank)?.rate ?? 0;
-    const r24 = SEED_RATES.fixedDeposit[24].find((r) => r.bank === meta.bank)?.rate ?? 0;
+    const r3  = fdRates[3].find((r) => r.bank === meta.bank)?.rate ?? 0;
+    const r6  = fdRates[6].find((r) => r.bank === meta.bank)?.rate ?? 0;
+    const r12 = fdRates[12].find((r) => r.bank === meta.bank)?.rate ?? 0;
+    const r24 = fdRates[24].find((r) => r.bank === meta.bank)?.rate ?? 0;
     const best = Math.max(r3, r6, r12, r24);
     const fd: FdRow = { bank: meta.bank, isPromo: meta.isPromo, minAmount: meta.minAmount, r3, r6, r12, r24, best };
     return { ...fd, _item: fdToItem(fd) };
@@ -416,7 +418,8 @@ function HomeLoansTable({ selectedIds, onToggle }: {
   selectedIds: Set<string>;
   onToggle: (item: SelectableItem) => void;
 }) {
-  const rows = HOME_LOANS.map((l) => ({ ...l, _item: loanToItem(l) }));
+  const { homeLoans } = useLiveData();
+  const rows = homeLoans.map((l) => ({ ...l, _item: loanToItem(l) }));
   const sort = useSort(rows as unknown as Record<string, unknown>[], 'rate', 'asc');
   const lowest = Math.min(...rows.map((r) => r.rate));
 
@@ -465,7 +468,8 @@ function CardsGrid({ selectedIds, onToggle }: {
   onToggle: (item: SelectableItem) => void;
 }) {
   const [filter, setFilter] = useState<'All' | 'Cashback' | 'Miles'>('All');
-  const visible = CREDIT_CARDS.filter((c) => filter === 'All' || c.type === filter).map((c) => ({ ...c, _item: cardToItem(c) }));
+  const { creditCards } = useLiveData();
+  const visible = creditCards.filter((c) => filter === 'All' || c.type === filter).map((c) => ({ ...c, _item: cardToItem(c) }));
 
   return (
     <>
@@ -553,7 +557,8 @@ function ETFTable({ selectedIds, onToggle }: {
   selectedIds: Set<string>;
   onToggle: (item: SelectableItem) => void;
 }) {
-  const rows = ETF_PRODUCTS.map((e) => ({ ...e, _item: etfToItem(e) }));
+  const { etfs } = useLiveData();
+  const rows = etfs.map((e) => ({ ...e, _item: etfToItem(e) }));
   const sort = useSort(rows as unknown as Record<string, unknown>[], 'ytd');
 
   return (
@@ -609,8 +614,9 @@ function BondsView({ selectedIds, onToggle }: {
   selectedIds: Set<string>;
   onToggle: (item: SelectableItem) => void;
 }) {
-  const govRows = SGS_BONDS.map((b) => ({ ...b, _item: sgsToItem(b) }));
-  const corpRows = CORPORATE_BONDS.map((b) => ({ ...b, _item: corpToItem(b) }));
+  const { sgsBonds, corporateBonds } = useLiveData();
+  const govRows = sgsBonds.map((b) => ({ ...b, _item: sgsToItem(b) }));
+  const corpRows = corporateBonds.map((b) => ({ ...b, _item: corpToItem(b) }));
   const govSort = useSort(govRows as unknown as Record<string, unknown>[], 'ytm');
   const corpSort = useSort(corpRows as unknown as Record<string, unknown>[], 'ytm');
   const maxGovYtm = Math.max(...govRows.map((r) => r.ytm));
@@ -738,6 +744,11 @@ export default function ComparePage() {
   const [selectedItems, setSelectedItems] = useState<SelectableItem[]>([]);
   const selectedIds = new Set(selectedItems.map((i) => i.id));
   const showComparison = selectedItems.length === 2;
+  const { meta } = useLiveData();
+  const freshness =
+    meta.source === 'seed'
+      ? 'Reference data'
+      : `${meta.source === 'live' ? 'Live data' : 'Live + reference'}${meta.asOf ? ` · as of ${meta.asOf}` : ''}`;
 
   function handleToggle(item: SelectableItem) {
     setSelectedItems((prev) => {
@@ -762,7 +773,22 @@ export default function ComparePage() {
         {/* Page header */}
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 28 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 640 }}>
-            <span className="eyebrow eyebrow-gold">Compare rates</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <span className="eyebrow eyebrow-gold">Compare rates</span>
+              <span
+                className="pill"
+                style={{
+                  fontSize: 11,
+                  borderColor: meta.source === 'seed' ? 'var(--line)' : 'var(--gold-line)',
+                  color: meta.source === 'seed' ? 'var(--ink-3)' : 'var(--gold)',
+                  background: meta.source === 'seed' ? 'var(--surface)' : 'var(--gold-soft)',
+                }}
+                title={meta.source === 'seed' ? 'Showing bundled reference data' : 'Pulled from the live rates database'}
+              >
+                {meta.source !== 'seed' && <span className="live-dot" />}
+                {freshness}
+              </span>
+            </div>
             <h1 style={{ fontFamily: 'var(--font-newsreader)', fontSize: 'clamp(26px, 3.4vw, 38px)', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.08 }}>
               Side-by-side, sorted your way
             </h1>
